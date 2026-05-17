@@ -608,12 +608,18 @@ export default function MobileLayout({ activeTab, powerOnState, packetState, isT
         display:'flex',
       }}>
         {TABS.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-            flex:1,padding:'10px 4px',background:'none',border:'none',cursor:'pointer',
-            display:'flex',flexDirection:'column',alignItems:'center',gap:2,
-            borderTop: activeTab===tab.id ? '2px solid #00ffc8' : '2px solid transparent',
-            transition:'all 0.2s',
-          }}>
+          <button key={tab.id}
+            onClick={() => {
+              // Bypass store gate on mobile — warning shown inside the drawer panel
+              useLabStore.setState({ activeTab: tab.id })
+              setDrawerOpen(false)
+            }}
+            style={{
+              flex:1,padding:'10px 4px',background:'none',border:'none',cursor:'pointer',
+              display:'flex',flexDirection:'column',alignItems:'center',gap:2,
+              borderTop: activeTab===tab.id ? '2px solid #00ffc8' : '2px solid transparent',
+              transition:'all 0.2s',
+            }}>
             <span style={{fontSize:18}}>{tab.icon}</span>
             <span style={{fontFamily:"'Orbitron',sans-serif",fontSize:7,letterSpacing:0.5,
               color: activeTab===tab.id ? '#00ffc8' : '#64748b',
