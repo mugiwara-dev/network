@@ -131,11 +131,10 @@ function SceneContent({ isMobile }) {
     {/* Particles — desktop only */}
     {!isMobile && <ParticleField count={200}/>}
 
-    {/* Contact shadows — lighter on mobile */}
-    <ContactShadows position={[0,-2.8,0]}
-      opacity={isMobile ? 0.2 : 0.3}
-      scale={isMobile ? 10 : 18}
-      blur={isMobile ? 1 : 2} far={5}/>
+    {/* Contact shadows — desktop only (extra render pass, too expensive on mobile) */}
+    {!isMobile && (
+      <ContactShadows position={[0,-2.8,0]} opacity={0.3} scale={18} blur={2} far={5}/>
+    )}
 
     <OrbitControls makeDefault
       minPolarAngle={Math.PI/8} maxPolarAngle={Math.PI/2.1}

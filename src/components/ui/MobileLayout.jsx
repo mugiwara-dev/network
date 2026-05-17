@@ -21,11 +21,11 @@ const TABS = [
 function MobileDrawer({ open, onClose, children, title, color='#00ffc8' }) {
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop - solid, no blur */}
       {open && (
         <div onClick={onClose} style={{
-          position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',
-          zIndex:80,backdropFilter:'blur(2px)'
+          position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',
+          zIndex:80
         }}/>
       )}
       {/* Drawer */}
@@ -572,8 +572,8 @@ export default function MobileLayout({ activeTab, powerOnState, packetState, isT
       {/* ─── TOP BAR ─── */}
       <div style={{
         position:'absolute',top:0,left:0,right:0,zIndex:40,
-        background:'rgba(3,7,18,0.92)',backdropFilter:'blur(12px)',
-        borderBottom:'1px solid rgba(0,255,200,0.15)',
+        background:'#050a18',   /* solid — no blur compositing */
+        borderBottom:'1px solid rgba(0,255,200,0.2)',
         padding:'8px 12px',
         display:'flex',alignItems:'center',justifyContent:'space-between',
       }}>
@@ -603,14 +603,13 @@ export default function MobileLayout({ activeTab, powerOnState, packetState, isT
       {/* ─── BOTTOM NAV BAR ─── */}
       <div style={{
         position:'absolute',bottom:0,left:0,right:0,zIndex:40,
-        background:'rgba(3,7,18,0.95)',backdropFilter:'blur(12px)',
-        borderTop:'1px solid rgba(255,255,255,0.08)',
+        background:'#050a18',   /* solid — no blur compositing */
+        borderTop:'1px solid rgba(255,255,255,0.1)',
         display:'flex',
       }}>
         {TABS.map(tab => (
           <button key={tab.id}
             onClick={() => {
-              // Bypass store gate on mobile — warning shown inside the drawer panel
               useLabStore.setState({ activeTab: tab.id })
               setDrawerOpen(false)
             }}
@@ -618,12 +617,11 @@ export default function MobileLayout({ activeTab, powerOnState, packetState, isT
               flex:1,padding:'10px 4px',background:'none',border:'none',cursor:'pointer',
               display:'flex',flexDirection:'column',alignItems:'center',gap:2,
               borderTop: activeTab===tab.id ? '2px solid #00ffc8' : '2px solid transparent',
-              transition:'all 0.2s',
             }}>
             <span style={{fontSize:18}}>{tab.icon}</span>
             <span style={{fontFamily:"'Orbitron',sans-serif",fontSize:7,letterSpacing:0.5,
               color: activeTab===tab.id ? '#00ffc8' : '#64748b',
-              textTransform:'uppercase',transition:'color 0.2s'}}>
+              textTransform:'uppercase'}}>
               {tab.label}
             </span>
           </button>

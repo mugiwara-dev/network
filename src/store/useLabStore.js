@@ -465,10 +465,13 @@ export const useLabStore = create(
 
   animateCable: (cid) => {
     let p = 0
+    const isMobile = window.innerWidth <= 768
+    const interval = isMobile ? 33 : 16   // 30fps on mobile, 60fps on desktop
+    const step = isMobile ? 0.05 : 0.025
     const iv = setInterval(() => {
-      p += 0.025; if (p >= 1) { p = 1; clearInterval(iv) }
+      p += step; if (p >= 1) { p = 1; clearInterval(iv) }
       set(s => ({ cableAnimations: {...s.cableAnimations, [cid]: p} }))
-    }, 16)
+    }, interval)
   },
 
   attemptPowerOn: () => {

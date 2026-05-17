@@ -158,6 +158,27 @@ html, body, #root {
   border-radius: 12px;
 }
 
+/* ── MOBILE PERFORMANCE: disable all blur and heavy effects ── */
+@media (max-width: 768px) {
+  .glass-panel {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(5, 10, 24, 0.97) !important;
+  }
+  /* No continuous animations while 3D is rendering */
+  .inventory-card:hover {
+    animation: none !important;
+  }
+  /* Faster, simpler transitions */
+  * {
+    transition-duration: 0.1s !important;
+  }
+  /* Disable box-shadow glow on mobile (GPU compositing layer) */
+  .toast {
+    box-shadow: none !important;
+  }
+}
+
 .glass-panel-bright {
   background: rgba(0, 255, 200, 0.05);
   backdrop-filter: blur(20px);
