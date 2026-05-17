@@ -298,6 +298,250 @@ function MobileHardwarePanel({ onClose }) {
   )
 }
 
+const OSI_INFO = {
+  7:'Application: Generating HTTP GET Request',
+  6:'Presentation: Formatting data (ASCII/UTF-8), Encrypting (TLS)',
+  5:'Session: Establishing connection state to Web Server',
+  4:'Transport: Adding TCP Header — Source Port: 443',
+  3:'Network: Adding IP Header — Dest: 8.8.8.8',
+  2:'Data Link: Adding Ethernet Frame — Source MAC: [PC_MAC]',
+  1:'Physical: Converting to 1s and 0s for cable transmission',
+}
+
+/* ─── MOBILE NETWORK PANEL ─── */
+function MobileNetworkPanel() {
+  const { packetState, currentOsiLayer, startPacketAnimation, packetData, powerOnState } = useLabStore()
+  const ready = powerOnState === 'success'
+
+  return (
+    <div>
+      {/* Status banner */}
+      <div style={{
+        padding:'10px 12px',borderRadius:8,marginBottom:12,
+        background: ready ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+        border:`1px solid ${ready ? '#10b981' : '#ef4444'}40`,
+        display:'flex',alignItems:'center',gap:8
+      }}>
+        <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
+          background: ready ? '#10b981' : '#ef4444',
+          boxShadow:`0 0 8px ${ready ? '#10b981' : '#ef4444'}`}}/>
+        <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+          color: ready ? '#10b981' : '#ef4444'}}>
+          {ready ? 'Hardware online — ready to transmit' : 'Complete Hardware POST first to enable networking'}
+        </span>
+      </div>
+
+      {/* Send button */}
+      <button className="cyber-btn" onClick={startPacketAnimation}
+        disabled={packetState === 'animating' || !ready}
+        style={{
+          width:'100%',padding:'12px',fontSize:12,minHeight:44,marginBottom:14,
+          borderColor: packetState==='animating' ? '#64748b' : '#00ffc8',
+          color: packetState==='animating' ? '#64748b' : '#00ffc8',
+          background: packetState==='animating' ? 'rgba(100,116,139,0.05)' : 'rgba(0,255,200,0.05)',
+        }}>
+        {packetState==='animating' ? '📡 TRANSMITTING...' : '🚀 SEND DATA PACKET'}
+      </button>
+
+      {/* Live OSI Telemetry */}
+      <div style={{background:'rgba(0,0,0,0.4)',border:'1px solid rgba(255,255,255,0.05)',
+        borderRadius:8,padding:12,marginBottom:12}}>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:8,color:'#64748b',
+          letterSpacing:1,marginBottom:8,textTransform:'uppercase'}}>
+          Live Telemetry
+        </div>
+
+        {!packetState && (
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:'#4a5568',fontStyle:'italic'}}>
+            Awaiting transmission...
+          </div>
+        )}
+        {packetState==='animating' && currentOsiLayer > 0 && (
+          <div style={{animation:'fadeInUp 0.3s ease'}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:'#e2e8f0',marginBottom:4}}>
+              Layer {currentOsiLayer} Encapsulation
+            </div>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:'#00ffc8',
+              background:'rgba(0,255,200,0.1)',padding:'6px 8px',borderRadius:4,
+              borderLeft:'2px solid #00ffc8',lineHeight:1.5}}>
+              {OSI_INFO[currentOsiLayer]}
+            </div>
+          </div>
+        )}
+        {packetState==='animating' && currentOsiLayer===0 && (
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:'#f59e0b'}}>
+            → Packet traversing physical medium...
+          </div>
+        )}
+        {packetState==='done' && (
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:'#10b981',fontWeight:700}}>
+            ✅ Packet received by Web Server!
+          </div>
+        )}
+      </div>
+
+      {/* OSI Encapsulation Stack */}
+      {packetData && (
+        <div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:8,color:'#64748b',
+            letterSpacing:1,marginBottom:8,textTransform:'uppercase'}}>
+            Encapsulation Stack
+          </div>
+          <div style={{display:'flex',flexDirection:'column-reverse',gap:3}}>
+            {[1,2,3,4,5,6,7].map(l => (
+              <div key={l} style={{
+                display:'flex',justifyContent:'space-between',alignItems:'center',
+                padding:'6px 10px',borderRadius:4,
+                background: packetData[`layer${l}`] ? 'rgba(0,170,255,0.15)' : 'rgba(255,255,255,0.02)',
+                border:`1px solid ${packetData[`layer${l}`] ? 'rgba(0,170,255,0.3)' : 'transparent'}`,
+                transition:'all 0.3s'
+              }}>
+                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,
+                  color: packetData[`layer${l}`] ? '#00aaff' : '#4a5568'}}>
+                  L{l} — {['Physical','Data Link','Network','Transport','Session','Presentation','Application'][l-1]}
+                </span>
+                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8,
+                  color: packetData[`layer${l}`] ? '#10b981' : '#4a5568'}}>
+                  {packetData[`layer${l}`] ? '✓ ADDED' : 'PENDING'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const CABLE_TYPES = [
+  { id:'cat6',  name:'CAT6 Cable',   color:'#00aaff', desc:'10 Gbps · up to 55m', icon:'🔵' },
+  { id:'fiber', name:'Fiber SFP+',   color:'#39ff14', desc:'High-speed optical',  icon:'🟢' },
+  { id:'cat5e', name:'CAT5e Cable',  color:'#ffff00', desc:'1 Gbps · short runs',  icon:'🟡' },
+  { id:'cat6a', name:'CAT6a Cable',  color:'#bd00ff', desc:'10 Gbps · up to 100m', icon:'🟣' },
+  { id:'power', name:'Power Cable',  color:'#f43f5e', desc:'AC power to devices',  icon:'🔴' },
+]
+
+/* ─── MOBILE INFRA PANEL ─── */
+function MobileInfraPanel() {
+  const { infraSelectedCable, setInfraSelectedCable, infraCables, removeInfraCable } = useLabStore()
+
+  return (
+    <div>
+      {/* Instruction */}
+      <div style={{background:'rgba(0,170,255,0.06)',border:'1px solid rgba(0,170,255,0.15)',
+        borderRadius:8,padding:'8px 12px',marginBottom:12}}>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:8,color:'#00aaff',
+          letterSpacing:1,marginBottom:4}}>HOW TO CONNECT</div>
+        <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:'#64748b',lineHeight:1.6}}>
+          1. Select a cable type below<br/>
+          2. Tap a source port on the 3D rack<br/>
+          3. Tap the destination port to connect
+        </div>
+      </div>
+
+      {/* Cable type selector */}
+      <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:8,color:'#64748b',
+        letterSpacing:1,marginBottom:8,textTransform:'uppercase'}}>
+        Cable Inventory — tap to select
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:16}}>
+        {CABLE_TYPES.map(cable => (
+          <button key={cable.id}
+            onClick={() => setInfraSelectedCable(infraSelectedCable===cable.id ? null : cable.id)}
+            style={{
+              padding:'10px 12px',borderRadius:8,cursor:'pointer',textAlign:'left',
+              background: infraSelectedCable===cable.id ? `${cable.color}20` : 'rgba(255,255,255,0.03)',
+              border:`1px solid ${infraSelectedCable===cable.id ? cable.color : 'rgba(255,255,255,0.08)'}`,
+              borderLeft:`4px solid ${cable.color}`,
+              transition:'all 0.2s',minHeight:48,
+              display:'flex',alignItems:'center',gap:12
+            }}>
+            <span style={{fontSize:16}}>{cable.icon}</span>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,
+                color: infraSelectedCable===cable.id ? cable.color : '#cbd5e1',fontWeight:700}}>
+                {cable.name}
+              </div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:'#64748b',marginTop:2}}>
+                {cable.desc}
+              </div>
+            </div>
+            {infraSelectedCable===cable.id && (
+              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:7,
+                color:cable.color,letterSpacing:1,padding:'2px 6px',
+                border:`1px solid ${cable.color}`,borderRadius:3}}>
+                SELECTED
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Active Connections */}
+      {infraCables.length > 0 && (
+        <div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:8,color:'#64748b',
+            letterSpacing:1,marginBottom:8,textTransform:'uppercase'}}>
+            Active Connections ({infraCables.length})
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:12}}>
+            {infraCables.map(c => {
+              const cInfo = CABLE_TYPES.find(t=>t.id===c.type)
+              return (
+                <div key={c.id} style={{
+                  display:'flex',alignItems:'center',gap:8,padding:'8px 10px',
+                  background:'rgba(0,0,0,0.4)',
+                  border:`1px solid ${c.isFaulty ? '#f97316' : (cInfo?.color||'#fff')}40`,
+                  borderRadius:6
+                }}>
+                  <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
+                    background: c.isFaulty ? '#f97316' : (cInfo?.color||'#fff')}}/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,
+                      color: c.isFaulty ? '#f97316' : '#cbd5e1',
+                      overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                      {c.source.name} ↔ {c.dest.name} {c.isFaulty && '⚠️'}
+                    </div>
+                    <div style={{fontFamily:"'Inter',sans-serif",fontSize:7,
+                      color: cInfo?.color||'#64748b'}}>{(cInfo?.name||c.type).toUpperCase()}</div>
+                  </div>
+                  <button onClick={() => removeInfraCable(c.id)} style={{
+                    background:'none',border:'1px solid rgba(239,68,68,0.3)',
+                    color:'#ef4444',borderRadius:4,padding:'2px 8px',
+                    cursor:'pointer',fontSize:10,flexShrink:0,minHeight:28
+                  }}>✕</button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Hardware inventory */}
+      <div style={{background:'rgba(232,121,249,0.05)',border:'1px solid rgba(232,121,249,0.15)',
+        borderRadius:8,padding:'10px 12px',marginBottom:12}}>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:8,color:'#e879f9',
+          letterSpacing:1,marginBottom:8}}>PHYSICAL HARDWARE</div>
+        {['Enterprise Edge Router (L3 · ISP Link)','Core Switch (24-port)','Patch Panel (24-port)','2× 1U Rack Servers'].map((item,i)=>(
+          <div key={i} style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+            <span style={{color:'#e879f9',fontSize:8}}>▸</span>
+            <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:'#cbd5e1'}}>{item}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Fault inject */}
+      <button onClick={useLabStore.getState().triggerRandomFault}
+        className="cyber-btn"
+        style={{width:'100%',padding:'10px',fontSize:10,minHeight:40,
+          borderColor:'#ef4444',color:'#ef4444',
+          background:'rgba(239,68,68,0.08)'}}>
+        ⚡ Inject Random Hardware Fault
+      </button>
+    </div>
+  )
+}
+
 /* ─── MAIN MOBILE LAYOUT ─── */
 export default function MobileLayout({ activeTab, powerOnState, packetState, isTerminalOpen }) {
   const setActiveTab = useLabStore(s => s.setActiveTab)
@@ -394,13 +638,6 @@ export default function MobileLayout({ activeTab, powerOnState, packetState, isT
         </div>
       )}
 
-      {/* Packet inspector for network tab */}
-      {(activeTab === 'network' || packetState) && (
-        <div style={{position:'absolute',top:56,left:0,right:0,zIndex:35,padding:'0 8px'}}>
-          <PacketInspector />
-        </div>
-      )}
-
       {/* Admin terminal */}
       {activeTab==='infra' && isTerminalOpen && <AdminTerminal />}
 
@@ -414,18 +651,10 @@ export default function MobileLayout({ activeTab, powerOnState, packetState, isT
           <MobileHardwarePanel onClose={() => setDrawerOpen(false)} />
         )}
         {activeTab === 'network' && (
-          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:'#64748b',
-            textAlign:'center',padding:24}}>
-            Use the packet inspector above to send packets.<br/>
-            Complete hardware POST first to enable networking.
-          </div>
+          <MobileNetworkPanel />
         )}
         {activeTab === 'infra' && (
-          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:'#64748b',
-            textAlign:'center',padding:24}}>
-            Rotate the 3D rack to see ports.<br/>
-            Tap ports to connect cables.
-          </div>
+          <MobileInfraPanel />
         )}
       </MobileDrawer>
     </div>
