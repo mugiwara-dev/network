@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Html, Grid, ContactShadows, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { useLabStore } from '../../store/useLabStore'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 // Standard rack dimensions
 const RACK_W = 2.4
@@ -820,12 +821,19 @@ function InfraContent() {
 }
 
 export default function InfraScene() {
+  const isMobile = useIsMobile()
   return (
     <div style={{width:'100%',height:'100%',position:'absolute',inset:0}}>
       <Canvas 
-        shadows 
-        camera={{position:[0, RACK_H / 2, 8],fov:45}}
-        gl={{antialias:true,alpha:false}} 
+        shadows={!isMobile}
+        camera={{position:[0, RACK_H / 2, 8],fov: isMobile ? 55 : 45}}
+        gl={{
+          antialias: !isMobile,
+          alpha: false,
+          powerPreference: isMobile ? 'low-power' : 'high-performance',
+        }}
+        dpr={isMobile ? [1, 1.5] : [1, 2]}
+        frameloop={isMobile ? 'demand' : 'always'}
         onCreated={({gl})=>gl.setClearColor('#030712')}
       >
         <Suspense fallback={null}>
