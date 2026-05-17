@@ -622,9 +622,17 @@ export const useLabStore = create(
     installStreak:0, showAchievement:null, activeQuiz:null, quizAnswered:{},
   }),
   isComponentLocked: (id) => {
-    const { components, ramSlotUnlocked } = get()
+    const { components, ramSlotUnlocked, placedComponents } = get()
     if (id === C.RAM && !ramSlotUnlocked) return true
-    return (DEPENDENCIES[id]||[]).some(d => !components.find(c=>c.id===d)?.installed)
+    const comp = components.find(c => c.id === id)
+    const isCable = comp?.category === 'cable'
+    return (DEPENDENCIES[id]||[]).some(d => {
+      const dep = components.find(c => c.id === d)
+      if (!dep) return true
+      // Cables: dependency satisfied if placed OR installed
+      // Hardware: dependency must be fully installed
+      return isCable ? (!dep.installed && !placedComponents[d]) : !dep.installed
+    })
   },
   getInstallProgress: () => {
     const c = get().components
