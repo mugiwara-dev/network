@@ -1,4 +1,6 @@
 import { useLabStore, DEPENDENCIES, SCREWABLE, SCREWS_REQUIRED, TUTORIAL_STEPS } from '../../store/useLabStore'
+import { useState } from 'react'
+import { AchievementsList } from './GamificationUI'
 
 const catLabels = { hardware:'⚙️ Hardware', cooling:'❄️ Cooling', storage:'💾 Storage', power:'⚡ Power', cable:'🔌 Cables' }
 const catOrder = ['hardware','cooling','storage','power','cable']
@@ -6,9 +8,10 @@ const catOrder = ['hardware','cooling','storage','power','cable']
 export default function Sidebar() {
   const { components,ramSlotUnlocked,toggleRamSlot,installComponent,uninstallComponent,
     selectedComponent,setSelected,isComponentLocked,getInstallProgress,attemptPowerOn,powerOnState,
-    screwProgress,addScrew,placedComponents } = useLabStore()
+    screwProgress,addScrew,placedComponents,xp,level,achievements,quizCorrect,quizTotal } = useLabStore()
   const progress = getInstallProgress()
   const pct = Math.round((progress.done/progress.total)*100)
+  const [tab, setTab] = useState('build') // 'build' | 'achievements'
 
   // Determine current tutorial step
   const currentStep = TUTORIAL_STEPS.find(step => {
@@ -23,12 +26,32 @@ export default function Sidebar() {
     <div className="corner-decoration corner-tl"/><div className="corner-decoration corner-tr"/>
     <div className="corner-decoration corner-bl"/><div className="corner-decoration corner-br"/>
 
-    <div style={{marginBottom:'12px'}}>
-      <div style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'2px'}}>
+    {/* XP Header */}
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}}>
+      <div style={{display:'flex',alignItems:'center',gap:6}}>
         <div style={{width:5,height:5,borderRadius:'50%',background:'#00ffc8',boxShadow:'0 0 8px rgba(0,255,200,0.8)'}}/>
         <h2 style={{fontFamily:"'Orbitron',sans-serif",fontSize:'11px',fontWeight:700,letterSpacing:'2px',color:'#00ffc8',textTransform:'uppercase'}}>Service IT Assembly</h2>
       </div>
-      <p style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'8px',color:'#64748b'}}>TESDA NC II · Micro-ATX H410M Build</p>
+      <div style={{display:'flex',alignItems:'center',gap:6}}>
+        <div style={{background:'rgba(245,158,11,0.15)',border:'1px solid rgba(245,158,11,0.4)',borderRadius:4,padding:'2px 6px',display:'flex',alignItems:'center',gap:4}}>
+          <span style={{fontFamily:"'Orbitron',sans-serif",fontSize:8,color:'#f59e0b',fontWeight:700}}>Lv.{level}</span>
+          <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:7,color:'#64748b'}}>{xp}xp</span>
+        </div>
+      </div>
+    </div>
+    <p style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'8px',color:'#64748b',marginBottom:'10px'}}>TESDA NC II · Micro-ATX H410M Build</p>
+
+    {/* Tab switcher */}
+    <div style={{display:'flex',gap:4,marginBottom:'12px'}}>
+      {[['build','⚙️ Build'],['achievements','🏅 Awards']].map(([id,label])=>(
+        <button key={id} onClick={()=>setTab(id)} style={{
+          flex:1,padding:'5px 0',fontFamily:"'Orbitron',sans-serif",fontSize:8,
+          letterSpacing:1,textTransform:'uppercase',cursor:'pointer',borderRadius:4,
+          background: tab===id ? 'rgba(0,255,200,0.12)' : 'rgba(255,255,255,0.03)',
+          border: `1px solid ${tab===id ? 'rgba(0,255,200,0.4)' : 'rgba(255,255,255,0.08)'}`,
+          color: tab===id ? '#00ffc8' : '#64748b',transition:'all 0.2s'
+        }}>{label}</button>
+      ))}
     </div>
 
     {/* Tutorial / Current Step Guide */}
@@ -55,7 +78,25 @@ export default function Sidebar() {
       </div>
     )}
 
-    {/* Progress */}
+    {/* ACHIEVEMENTS TAB */}
+    {tab === 'achievements' && (
+      <div>
+        <div style={{marginBottom:10}}>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+            <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8,color:'#64748b'}}>Quiz Score</span>
+            <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8,color:'#00ffc8'}}>{quizCorrect}/{quizTotal} correct</span>
+          </div>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
+            <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8,color:'#64748b'}}>Achievements</span>
+            <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8,color:'#f59e0b'}}>{achievements.length}/10 unlocked</span>
+          </div>
+        </div>
+        <AchievementsList />
+      </div>
+    )}
+
+    {/* BUILD TAB */}
+    {tab === 'build' && <>
     <div style={{marginBottom:'12px'}}>
       <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}>
         <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'8px',color:'#64748b',letterSpacing:'1px',textTransform:'uppercase'}}>Assembly Progress</span>
@@ -173,5 +214,6 @@ export default function Sidebar() {
         </div>
       </div>
     })}
+    </>}
   </div>
 }

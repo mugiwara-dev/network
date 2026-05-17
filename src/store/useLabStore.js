@@ -1,6 +1,33 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+// ═══ XP VALUES per action ═══
+export const XP = {
+  INSTALL_COMPONENT: 50,
+  TIGHTEN_SCREW: 10,
+  CONNECT_CABLE: 40,
+  UNLOCK_RAM: 15,
+  POST_SUCCESS: 200,
+  QUIZ_CORRECT: 75,
+  QUIZ_WRONG: 0,
+  NETWORK_PACKET: 150,
+  INFRA_CABLE: 30,
+}
+
+// ═══ ACHIEVEMENTS ═══
+export const ACHIEVEMENTS = [
+  { id:'first_install',   icon:'🔧', title:'First Install',     desc:'Install your first component',          xp:50,   condition: s => s.components.filter(c=>c.installed).length >= 1 },
+  { id:'screw_master',   icon:'🔩', title:'Screw Master',      desc:'Tighten all screws on a component',      xp:80,   condition: s => Object.values(s.screwProgress).some(v=>v>=4) },
+  { id:'power_on',       icon:'⚡', title:'Power On!',          desc:'Successfully complete a POST test',      xp:200,  condition: s => s.powerOnState === 'success' },
+  { id:'cable_runner',   icon:'🔌', title:'Cable Runner',      desc:'Connect 3 cables',                       xp:100,  condition: s => s.components.filter(c=>c.category==='cable'&&c.installed).length >= 3 },
+  { id:'full_build',     icon:'🏆', title:'Full Build',        desc:'Install all 14 components',              xp:500,  condition: s => s.components.every(c=>c.installed) },
+  { id:'quiz_ace',       icon:'🎓', title:'Quiz Ace',          desc:'Answer 3 quiz questions correctly',      xp:150,  condition: s => s.quizCorrect >= 3 },
+  { id:'speed_builder',  icon:'⚡', title:'Speed Builder',     desc:'Install 5 components',                   xp:120,  condition: s => s.components.filter(c=>c.installed).length >= 5 },
+  { id:'networker',      icon:'🌐', title:'Networker',         desc:'Send a packet through the network',      xp:200,  condition: s => s.packetState === 'done' },
+  { id:'infra_pro',      icon:'🖧',  title:'Infra Pro',         desc:'Connect 4 infra cables',                 xp:120,  condition: s => s.infraCables.length >= 4 },
+  { id:'streak_3',       icon:'🔥', title:'On Fire!',           desc:'Install 3 components in a row',          xp:100,  condition: s => s.installStreak >= 3 },
+]
+
 export const C = {
   CPU:'cpu', RAM:'ram', PSU:'psu',
   POWER_CABLE:'power_cable', SATA_DATA:'sata_data', SATA_POWER:'sata_power',
@@ -94,6 +121,70 @@ const initialComponents = [
     ['Power Switch','HDD LED','Reset SW','2-Pin Headers']),
 ]
 
+// ═══ COMPONENT QUIZZES — shown after each install ═══
+export const COMPONENT_QUIZZES = {
+  [C.CPU]: {
+    question: 'What does CPU stand for?',
+    options: ['Central Processing Unit','Computer Power Unit','Core Processing Unit','Central Program Utility'],
+    answer: 0,
+    funFact: '🧠 The i3-10100 has 4 cores & 8 threads. It can handle 8 tasks simultaneously!'
+  },
+  [C.RAM]: {
+    question: 'What type of memory is RAM?',
+    options: ['Permanent storage','Volatile (loses data on power off)','Read-only memory','Optical memory'],
+    answer: 1,
+    funFact: '⚡ RAM operates at 2666 MHz — that\'s 2.6 billion cycles per second!'
+  },
+  [C.PSU]: {
+    question: 'What does an 80+ Silver rating mean on a PSU?',
+    options: ['It weighs 80kg','It is at least 85% energy efficient','It has 80 cables','It costs $80'],
+    answer: 1,
+    funFact: '💡 A 500W 80+ Silver PSU wastes only ~75W as heat — the rest powers your PC!'
+  },
+  [C.CPU_COOLER]: {
+    question: 'Why is thermal paste applied between CPU and cooler?',
+    options: ['For aesthetics','To fill microscopic air gaps and improve heat transfer','To secure the cooler','To protect from static'],
+    answer: 1,
+    funFact: '🌡️ Without thermal paste, the CPU would overheat in seconds! Air gaps are terrible conductors.'
+  },
+  [C.HDD]: {
+    question: 'HDD uses which technology to store data?',
+    options: ['Flash NAND chips','Magnetic spinning platters','Optical laser burns','Holographic crystals'],
+    answer: 1,
+    funFact: '🔄 At 7200 RPM, the platter spins 120 times per second — faster than a car engine at idle!'
+  },
+  [C.SSD]: {
+    question: 'Why is an SSD faster than an HDD?',
+    options: ['It spins faster','It uses more power','No moving parts — uses flash memory','It is larger'],
+    answer: 2,
+    funFact: '🚀 This SSD reads at 500 MB/s — it could copy a full DVD in about 10 seconds!'
+  },
+  [C.POWER_CABLE]: {
+    question: 'How many pins does the main ATX motherboard power connector have?',
+    options: ['8 pins','16 pins','24 pins','4 pins'],
+    answer: 2,
+    funFact: '⚡ The 24-pin delivers +12V, +5V, +3.3V and -12V rails to the entire motherboard!'
+  },
+  [C.SATA_DATA]: {
+    question: 'What is the maximum data transfer speed of SATA III?',
+    options: ['1.5 Gb/s','3.0 Gb/s','6.0 Gb/s','12.0 Gb/s'],
+    answer: 2,
+    funFact: '📡 SATA III at 6 Gb/s can transfer a 1GB file in under 2 seconds!'
+  },
+  [C.CMOS]: {
+    question: 'What happens when the CMOS battery dies?',
+    options: ['PC will not boot','BIOS settings and clock reset on every power off','GPU stops working','RAM is erased'],
+    answer: 1,
+    funFact: '🔋 CR2032 batteries last 7-10 years! Your BIOS date will reset if it dies.'
+  },
+  [C.FRONT_PANEL]: {
+    question: 'The front panel Power SW header connects to what on the motherboard?',
+    options: ['The GPU slot','The 24-pin connector','The JFP1 header (Power/Reset/LED pins)','The RAM slot'],
+    answer: 2,
+    funFact: '💡 Shorting the Power SW pins momentarily with a screwdriver can boot a PC without a case button!'
+  },
+}
+
 export const useLabStore = create(
   persist(
     (set, get) => ({
@@ -106,14 +197,24 @@ export const useLabStore = create(
   cableAnimations: { [C.POWER_CABLE]:0, [C.SATA_DATA]:0, [C.SATA_POWER]:0, [C.FRONT_PANEL]:0 },
   powerOnState: null, // null | 'success' | 'error' | 'beep'
 
-  // Screw mechanics: which screwable components have been placed (waiting for screws)
-  placedComponents: {}, // { [id]: true } when placed but not yet fully screwed
-  // Screw mechanics state: { [componentId]: numberOfScrewsDone }
+  // Screw mechanics
+  placedComponents: {},
   screwProgress: {},
 
+  // ═══ GAMIFICATION ═══
+  xp: 0,
+  level: 1,
+  achievements: [],       // array of unlocked achievement IDs
+  quizCorrect: 0,
+  quizTotal: 0,
+  installStreak: 0,
+  showAchievement: null,  // { id, icon, title, xp } — current popup
+  activeQuiz: null,       // { compId, question, options, answer, funFact }
+  quizAnswered: {},       // { [compId]: 'correct'|'wrong' }
+
   // Network Lab States
-  activeTab: 'hardware', // 'hardware' | 'network' | 'infra' | 'simulator'
-  packetState: null, // null | 'animating' | 'done'
+  activeTab: 'hardware',
+  packetState: null,
   currentOsiLayer: 7, // 7 down to 1
   packetData: null,
 
@@ -268,6 +369,7 @@ export const useLabStore = create(
     const s = !get().ramSlotUnlocked
     set({ ramSlotUnlocked: s })
     get().addToast(s ? '🔓 RAM slot unlocked' : '🔒 RAM slot locked', s ? 'success' : 'warn')
+    if (s) get().addXP(15, 'Unlocked RAM slot')
   },
 
   // Screw mechanic: add one screw click to a component
@@ -283,20 +385,23 @@ export const useLabStore = create(
 
     const next = current + 1
     set(s => ({ screwProgress: { ...s.screwProgress, [id]: next } }))
+    get().addXP(10, `Screw ${next}/${SCREWS_REQUIRED}`)
 
     if (next < SCREWS_REQUIRED) {
       get().addToast(`🔩 Screw ${next}/${SCREWS_REQUIRED} tightened — ${comp.name}`, 'info')
     }
 
     if (next >= SCREWS_REQUIRED) {
-      // All screws done — fully install
       const verb = 'secured & installed'
       set(s => ({
         components: s.components.map(c => c.id === id ? {...c, installed:true} : c),
         placedComponents: { ...s.placedComponents, [id]: false },
+        installStreak: s.installStreak + 1,
         assemblyLog: [...s.assemblyLog, { time: new Date().toLocaleTimeString(), action: `✅ ${comp.name} ${verb} (4/4 screws)`, id }],
       }))
       get().addToast(`🔩 ${comp.name} fully secured!`, 'success')
+      get().addXP(40, `${comp.name} secured`)
+      setTimeout(() => get().checkAchievements(), 100)
     }
   },
 
@@ -327,10 +432,18 @@ export const useLabStore = create(
     const verb = comp.category === 'cable' ? 'connected' : 'installed'
     set(s => ({
       components: s.components.map(c => c.id === id ? {...c, installed:true} : c),
+      installStreak: s.installStreak + 1,
       assemblyLog: [...s.assemblyLog, { time: new Date().toLocaleTimeString(), action: `✅ ${comp.name} ${verb}`, id }],
     }))
     get().addToast(`✅ ${comp.name} ${verb}!`,'success')
+    get().addXP(comp.category === 'cable' ? 40 : 50, `${comp.name} ${verb}`)
     if (comp.category === 'cable') get().animateCable(id)
+    // Trigger quiz for this component
+    const quiz = COMPONENT_QUIZZES[id]
+    if (quiz && !get().quizAnswered[id]) {
+      setTimeout(() => set({ activeQuiz: { compId: id, ...quiz } }), 800)
+    }
+    setTimeout(() => get().checkAchievements(), 200)
   },
 
   uninstallComponent: (id) => {
@@ -408,6 +521,7 @@ export const useLabStore = create(
     } else {
       set(s => ({
         powerOnState: 'success',
+        installStreak: 0,
         assemblyLog: [...s.assemblyLog,
           { time: new Date().toLocaleTimeString(), action: '🟢 POST SUCCESS — All systems nominal', id: 'post' },
           { time: '', action: '   ✅ CPU OK · RAM OK · Power OK · Integrated GPU (UHD 630) OK', id: 'post_ok' },
@@ -415,8 +529,56 @@ export const useLabStore = create(
         ]
       }))
       get().addToast('🟢 System POST successful!','success')
+      get().addXP(200, 'POST Success!')
+      setTimeout(() => get().checkAchievements(), 200)
     }
   },
+
+  // ═══ GAMIFICATION ACTIONS ═══
+  addXP: (amount, reason='') => {
+    const { xp } = get()
+    const newXp = xp + amount
+    const newLevel = Math.floor(newXp / 300) + 1
+    set({ xp: newXp, level: newLevel })
+    if (reason) get().addToast(`+${amount} XP — ${reason}`, 'xp')
+    // Check achievements after XP add
+    setTimeout(() => get().checkAchievements(), 100)
+  },
+
+  checkAchievements: () => {
+    const state = get()
+    ACHIEVEMENTS.forEach(ach => {
+      if (!state.achievements.includes(ach.id) && ach.condition(state)) {
+        set(s => ({ achievements: [...s.achievements, ach.id] }))
+        get().addXP(ach.xp, `Achievement: ${ach.title}`)
+        set({ showAchievement: ach })
+        setTimeout(() => set({ showAchievement: null }), 4000)
+      }
+    })
+  },
+
+  dismissAchievement: () => set({ showAchievement: null }),
+
+  submitQuizAnswer: (compId, selectedIdx) => {
+    const { activeQuiz, quizAnswered } = get()
+    if (!activeQuiz || quizAnswered[compId]) return
+    const correct = selectedIdx === activeQuiz.answer
+    set(s => ({
+      quizAnswered: { ...s.quizAnswered, [compId]: correct ? 'correct' : 'wrong' },
+      quizCorrect: correct ? s.quizCorrect + 1 : s.quizCorrect,
+      quizTotal: s.quizTotal + 1,
+      activeQuiz: null,
+    }))
+    if (correct) {
+      get().addXP(XP.QUIZ_CORRECT, 'Quiz correct!')
+      get().addToast('🎓 Correct! +75 XP', 'success')
+    } else {
+      get().addToast(`❌ Wrong. The answer was: ${activeQuiz.options[activeQuiz.answer]}`, 'danger')
+    }
+    setTimeout(() => get().checkAchievements(), 100)
+  },
+
+  closeQuiz: () => set({ activeQuiz: null }),
 
   setHovered: (id) => set({ hoveredComponent: id }),
   setSelected: (id) => set({ selectedComponent: id === get().selectedComponent ? null : id }),
@@ -432,7 +594,9 @@ export const useLabStore = create(
     selectedComponent:null, powerOnState:null,
     cableAnimations:{[C.POWER_CABLE]:0,[C.SATA_DATA]:0,[C.SATA_POWER]:0,[C.FRONT_PANEL]:0,[C.MAIN_POWER]:0},
     activeTab: 'hardware', packetState: null, currentOsiLayer: 7, packetData: null,
-    infraSelectedCable: null, infraSelectedPort: null, infraCables: []
+    infraSelectedCable: null, infraSelectedPort: null, infraCables: [],
+    xp:0, level:1, achievements:[], quizCorrect:0, quizTotal:0,
+    installStreak:0, showAchievement:null, activeQuiz:null, quizAnswered:{},
   }),
   isComponentLocked: (id) => {
     const { components, ramSlotUnlocked } = get()
@@ -446,7 +610,6 @@ export const useLabStore = create(
     }),
     {
       name: 'it-sandbox-hardware-state',
-      // Only persist the important assembly/progress state, NOT ephemeral UI state
       partialize: (state) => ({
         components: state.components,
         ramSlotUnlocked: state.ramSlotUnlocked,
@@ -455,8 +618,15 @@ export const useLabStore = create(
         powerOnState: state.powerOnState,
         placedComponents: state.placedComponents,
         screwProgress: state.screwProgress,
-        // Also persist infra cables so networking progress is saved
         infraCables: state.infraCables,
+        // Persist gamification state
+        xp: state.xp,
+        level: state.level,
+        achievements: state.achievements,
+        quizCorrect: state.quizCorrect,
+        quizTotal: state.quizTotal,
+        installStreak: state.installStreak,
+        quizAnswered: state.quizAnswered,
       }),
     }
   )

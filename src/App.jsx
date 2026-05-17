@@ -10,6 +10,7 @@ import InfraScene from './components/3d/InfraScene'
 import InfraSidebar from './components/ui/InfraSidebar'
 import AdminTerminal from './components/ui/AdminTerminal'
 import ITSandboxSimulator from './components/ui/ITSandboxSimulator'
+import { QuizModal, AchievementPopup, XPBar } from './components/ui/GamificationUI'
 import { useLabStore } from './store/useLabStore'
 
 /**
@@ -50,6 +51,9 @@ export default function App() {
       {/* UI Overlays */}
       <Header />
       <ToastStack />
+      <QuizModal />
+      <AchievementPopup />
+      <XPBar />
 
       {activeTab === 'hardware' && (
         <>

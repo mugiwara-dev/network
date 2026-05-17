@@ -7,10 +7,11 @@ export default function ToastStack() {
   const { toasts } = useLabStore()
 
   const typeStyles = {
-    success: { borderColor: 'rgba(16, 185, 129, 0.4)', iconColor: '#10b981' },
-    danger: { borderColor: 'rgba(239, 68, 68, 0.4)', iconColor: '#ef4444' },
-    warn: { borderColor: 'rgba(245, 158, 11, 0.4)', iconColor: '#f59e0b' },
-    info: { borderColor: 'rgba(0, 170, 255, 0.4)', iconColor: '#00aaff' },
+    success: { borderColor: 'rgba(16, 185, 129, 0.4)', iconColor: '#10b981', icon: '✅' },
+    danger:  { borderColor: 'rgba(239, 68, 68, 0.4)',  iconColor: '#ef4444', icon: '❌' },
+    warn:    { borderColor: 'rgba(245, 158, 11, 0.4)', iconColor: '#f59e0b', icon: '⚠️' },
+    info:    { borderColor: 'rgba(0, 170, 255, 0.4)',  iconColor: '#00aaff', icon: 'ℹ️' },
+    xp:      { borderColor: 'rgba(251,191,36,0.6)',    iconColor: '#fbbf24', icon: '⭐' },
   }
 
   if (toasts.length === 0) return null
