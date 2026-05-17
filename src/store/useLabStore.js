@@ -539,9 +539,15 @@ export const useLabStore = create(
     const { xp } = get()
     const newXp = xp + amount
     const newLevel = Math.floor(newXp / 300) + 1
+    const didLevelUp = newLevel > level
     set({ xp: newXp, level: newLevel })
-    if (reason) get().addToast(`+${amount} XP — ${reason}`, 'xp')
-    // Check achievements after XP add
+    // Only show XP toast for big gains (≥40 XP) to avoid spam
+    if (reason && amount >= 40) {
+      get().addToast(`+${amount} XP — ${reason}`, 'xp')
+    }
+    if (didLevelUp) {
+      get().addToast(`🏆 LEVEL UP! Now Level ${newLevel}`, 'success')
+    }
     setTimeout(() => get().checkAchievements(), 100)
   },
 
@@ -584,8 +590,22 @@ export const useLabStore = create(
   setSelected: (id) => set({ selectedComponent: id === get().selectedComponent ? null : id }),
   addToast: (message, type='info') => {
     const id = Date.now()
+    const current = get().toasts
+    // On mobile: max 2 toasts total; if XP toast already queued, skip new XP toasts
+    if (type === 'xp' && current.some(t => t.type === 'xp')) return
+    if (current.length >= 2) {
+      // Drop lowest-priority toast (xp type) to make room for important ones
+      const hasXp = current.find(t => t.type === 'xp')
+      if (hasXp) {
+        set(s => ({ toasts: s.toasts.filter(t => t.id !== hasXp.id) }))
+      } else {
+        return // drop if already 2 non-xp toasts
+      }
+    }
     set(s => ({ toasts: [...s.toasts, {id, message, type}] }))
-    setTimeout(() => set(s => ({ toasts: s.toasts.filter(t => t.id !== id) })), 3500)
+    // XP toasts disappear faster (1800ms), others at 3000ms
+    const duration = type === 'xp' ? 1800 : 3000
+    setTimeout(() => set(s => ({ toasts: s.toasts.filter(t => t.id !== id) })), duration)
   },
   resetAll: () => set({
     components: initialComponents.map(c => ({...c, installed:false})),

@@ -1,5 +1,6 @@
 import { useLabStore, ACHIEVEMENTS } from '../../store/useLabStore'
 import { useState, useEffect } from 'react'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 /**
  * QuizModal — pops up after each component install with a multiple-choice question.
@@ -15,6 +16,7 @@ export function QuizModal() {
     setRevealed(false)
   }, [activeQuiz?.compId])
 
+  const isMobile = useIsMobile()
   if (!activeQuiz) return null
 
   const answered = quizAnswered[activeQuiz.compId]
@@ -30,9 +32,12 @@ export function QuizModal() {
 
   return (
     <div style={{
-      position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:200,
+      position:'fixed',inset:0,
+      background: isMobile ? 'rgba(0,0,0,0.88)' : 'rgba(0,0,0,0.75)',
+      zIndex:200,
       display:'flex',alignItems:'center',justifyContent:'center',
-      animation:'fadeInUp 0.3s ease',backdropFilter:'blur(4px)'
+      animation:'fadeInUp 0.3s ease',
+      backdropFilter: isMobile ? 'none' : 'blur(4px)',
     }}>
       <div className="glass-panel quiz-modal-inner" style={{
         maxWidth:480,width:'90vw',padding:'24px',
@@ -142,18 +147,25 @@ export function QuizModal() {
  * AchievementPopup — slides in from top-right when an achievement unlocks.
  */
 export function AchievementPopup() {
+  const isMobile = useIsMobile()
   const { showAchievement, dismissAchievement } = useLabStore()
   if (!showAchievement) return null
   return (
     <div onClick={dismissAchievement} style={{
-      position:'fixed',top:80,right:20,zIndex:300,
+      position:'fixed',
+      top: isMobile ? 52 : 80,
+      right: isMobile ? 8 : 20,
+      left: isMobile ? 8 : 'auto',
+      zIndex:300,
       cursor:'pointer',
     }}>
       <div className="glass-panel achievement-popup" style={{
-        padding:'12px 18px',minWidth:280,
+        padding:'10px 14px',
         border:'2px solid #f59e0b',
-        boxShadow:'0 0 30px rgba(245,158,11,0.4)',
-        display:'flex',alignItems:'center',gap:14
+        boxShadow: isMobile ? 'none' : '0 0 30px rgba(245,158,11,0.4)',
+        background: isMobile ? '#0d1526' : undefined,
+        backdropFilter: isMobile ? 'none' : undefined,
+        display:'flex',alignItems:'center',gap:12
       }}>
         <div style={{fontSize:32}}>{showAchievement.icon}</div>
         <div>
@@ -182,6 +194,10 @@ export function AchievementPopup() {
  * XPBar — fixed bottom-center HUD showing level, XP progress, and streak.
  */
 export function XPBar() {
+  const isMobile = useIsMobile()
+  // On mobile the XP/level is shown inside the hardware drawer — no need for this overlay
+  if (isMobile) return null
+
   const { xp, level, installStreak, achievements } = useLabStore()
   const xpForLevel = level * 300
   const xpBase = (level - 1) * 300
