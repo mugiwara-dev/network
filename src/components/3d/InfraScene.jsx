@@ -20,6 +20,8 @@ const CABLE_TYPES = {
 }
 
 function FloatingLabel({ text, color, offsetX = 0 }) {
+  const isMobile = useIsMobile()
+  if (isMobile) return null
   return (
     <group position={[0, 0, 0]}>
       {/* Horizontal Connector Line */}
@@ -45,7 +47,10 @@ function FloatingLabel({ text, color, offsetX = 0 }) {
 
 function ClickablePort({ position, portId, name, size=[0.06, 0.08, 0.02], label }) {
   const [hovered, setHovered] = useState(false)
-  const { handleInfraPortClick, infraSelectedPort, infraSelectedCable } = useLabStore()
+  const handleInfraPortClick = useLabStore(s => s.handleInfraPortClick)
+  const infraSelectedPort = useLabStore(s => s.infraSelectedPort)
+  const infraSelectedCable = useLabStore(s => s.infraSelectedCable)
+  const isMobile = useIsMobile()
   
   const isSelected = infraSelectedPort?.id === portId
   const showHighlight = isSelected || (hovered && infraSelectedCable)
@@ -53,8 +58,8 @@ function ClickablePort({ position, portId, name, size=[0.06, 0.08, 0.02], label 
   return (
     <group 
       position={position}
-      onPointerOver={(e) => { e.stopPropagation(); setHovered(true) }}
-      onPointerOut={() => setHovered(false)}
+      onPointerOver={(e) => { e.stopPropagation(); !isMobile && setHovered(true) }}
+      onPointerOut={() => !isMobile && setHovered(false)}
       onClick={(e) => {
         e.stopPropagation()
         const vec = new THREE.Vector3()
@@ -81,7 +86,7 @@ function ClickablePort({ position, portId, name, size=[0.06, 0.08, 0.02], label 
         />
       </mesh>
       
-      {label && (
+      {!isMobile && label && (
         <Html position={[0, size[1] > 0.06 ? size[1] : -0.06, 0]} transform style={{
           fontFamily: "'JetBrains Mono', monospace", fontSize: '3px', color: '#94a3b8'
         }}>
@@ -131,7 +136,8 @@ function ServerRack() {
 
 function Server1U({ position, title, color, serverId }) {
   const ledRef = useRef()
-  const { handleInfraPortClick, infraSelectedPort, getInstallProgress, infraCables } = useLabStore()
+  const getInstallProgress = useLabStore(s => s.getInstallProgress)
+  const infraCables = useLabStore(s => s.infraCables)
   
   const progress = getInstallProgress()
   const isFullyAssembled = progress.done === progress.total
@@ -389,7 +395,8 @@ function UPS2U({ position }) {
 }
 
 function NAS2U({ position }) {
-  const { infraCables, addToast } = useLabStore()
+  const infraCables = useLabStore(s => s.infraCables)
+  const addToast = useLabStore(s => s.addToast)
   const [backingUp, setBackingUp] = useState(false)
   const ledsRef = useRef([])
   
@@ -492,7 +499,8 @@ function CableManager1U({ position }) {
 }
 
 function EnvironmentMonitor({ position }) {
-  const { infraCables } = useLabStore()
+  const infraCables = useLabStore(s => s.infraCables)
+  const isMobile = useIsMobile()
   
   const activePowerCables = infraCables.filter(c => !c.isFaulty && c.type === 'power' && (c.source.id.startsWith('ups') || c.dest.id.startsWith('ups')))
   const load = activePowerCables.length * 250 // 250W per device
@@ -526,25 +534,28 @@ function EnvironmentMonitor({ position }) {
       </mesh>
 
       {/* Floating Tilted HUD */}
-      <group position={[0, 2.0, 1.5]} rotation={[-Math.PI / 12, 0, 0]}>
-        <Html transform center style={{
-           background: 'rgba(0,0,0,0.8)', border: '1px solid #38bdf8', padding: '6px 12px', 
-           color: '#38bdf8', fontFamily: "'JetBrains Mono', monospace", fontSize: '6px', whiteSpace: 'nowrap', borderRadius: '4px'
-        }}>
-          <div style={{ color: '#94a3b8', marginBottom: '2px', fontSize: '4px', letterSpacing: '1px' }}>ENV. MONITOR</div>
-          <div style={{ display: 'flex', gap: '12px', fontWeight: 'bold' }}>
-            <div>TEMP: <span style={{ color: temp > 25 ? '#f97316' : '#39ff14' }}>{temp}°C</span></div>
-            <div>LOAD: <span style={{ color: '#00aaff' }}>{load}W</span></div>
-            <div>UPTIME: <span style={{ color: '#e879f9' }}>{h}:{m}:{s}</span></div>
-          </div>
-        </Html>
-      </group>
+      {!isMobile && (
+        <group position={[0, 2.0, 1.5]} rotation={[-Math.PI / 12, 0, 0]}>
+          <Html transform center style={{
+             background: 'rgba(0,0,0,0.8)', border: '1px solid #38bdf8', padding: '6px 12px', 
+             color: '#38bdf8', fontFamily: "'JetBrains Mono', monospace", fontSize: '6px', whiteSpace: 'nowrap', borderRadius: '4px'
+          }}>
+            <div style={{ color: '#94a3b8', marginBottom: '2px', fontSize: '4px', letterSpacing: '1px' }}>ENV. MONITOR</div>
+            <div style={{ display: 'flex', gap: '12px', fontWeight: 'bold' }}>
+              <div>TEMP: <span style={{ color: temp > 25 ? '#f97316' : '#39ff14' }}>{temp}°C</span></div>
+              <div>LOAD: <span style={{ color: '#00aaff' }}>{load}W</span></div>
+              <div>UPTIME: <span style={{ color: '#e879f9' }}>{h}:{m}:{s}</span></div>
+            </div>
+          </Html>
+        </group>
+      )}
     </group>
   )
 }
 
 function AdminWorkstation({ position }) {
-  const { setTerminalOpen, infraCables } = useLabStore()
+  const setTerminalOpen = useLabStore(s => s.setTerminalOpen)
+  const infraCables = useLabStore(s => s.infraCables)
   
   const activePowerCables = infraCables.filter(c => !c.isFaulty && c.type === 'power' && (c.source.id.startsWith('ups') || c.dest.id.startsWith('ups')))
   const load = activePowerCables.length * 250
@@ -584,21 +595,17 @@ function AdminWorkstation({ position }) {
           <meshStandardMaterial color="#000" />
         </mesh>
         {/* Screen content */}
-        <Html position={[0, 0, 0]} transform center style={{ width: '110px', height: '65px', background: '#000', border: '1px solid #39ff14', pointerEvents: 'none' }}>
-          <div style={{ color: '#39ff14', fontSize: '4px', fontFamily: "'JetBrains Mono', monospace", padding: '4px' }}>
-            root@noc:~# _<br/><br/><span style={{opacity:0.5}}>[CLICK TO OPEN TERMINAL]</span>
+        <Html position={[0, 0, 0]} transform center style={{ width: '110px', height: '65px', background: '#000', border: '1px solid #39ff14' }}>
+          <div 
+            style={{ width: '100%', height: '100%', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+            onPointerDown={(e) => { e.stopPropagation(); setTerminalOpen(true); }}
+            onClick={(e) => { e.stopPropagation(); setTerminalOpen(true); }}
+          >
+            <div style={{ color: '#39ff14', fontSize: '4px', fontFamily: "'JetBrains Mono', monospace", padding: '4px' }}>
+              root@noc:~# _<br/><br/><span style={{opacity:0.5}}>[CLICK TO OPEN TERMINAL]</span>
+            </div>
           </div>
         </Html>
-        {/* Transparent click target in front of the Html */}
-        <mesh 
-          position={[0, 0, 0.02]}
-          onPointerDown={(e) => { e.stopPropagation(); setTerminalOpen(true); }}
-          onPointerOver={() => { document.body.style.cursor = 'pointer' }}
-          onPointerOut={() => { document.body.style.cursor = 'default' }}
-        >
-          <planeGeometry args={[1.2, 0.7]} />
-          <meshBasicMaterial transparent opacity={0} />
-        </mesh>
       </group>
       
       {/* PC Tower */}
@@ -611,7 +618,9 @@ function AdminWorkstation({ position }) {
 }
 
 function ExternalDemarc({ position }) {
-  const { handleInfraPortClick, infraSelectedPort } = useLabStore()
+  const handleInfraPortClick = useLabStore(s => s.handleInfraPortClick)
+  const infraSelectedPort = useLabStore(s => s.infraSelectedPort)
+  const isMobile = useIsMobile()
   return (
     <group position={position}>
       {/* Box mounted on wall/floor */}
@@ -631,11 +640,17 @@ function ExternalDemarc({ position }) {
         />
       </group>
 
-      <Html position={[0, 0.25, 0.1]} transform center style={{
-        fontFamily: "'Orbitron', sans-serif", fontSize: '6px', color: '#f59e0b', letterSpacing: '1px'
-      }}>
-        ISP DEMARC
-      </Html>
+      {!isMobile ? (
+        <Html position={[0, 0.25, 0.1]} transform center style={{
+          fontFamily: "'Orbitron', sans-serif", fontSize: '6px', color: '#f59e0b', letterSpacing: '1px'
+        }}>
+          ISP DEMARC
+        </Html>
+      ) : (
+        <Text position={[0, 0.25, 0.12]} fontSize={0.06} color="#f59e0b" anchorX="center" anchorY="middle">
+          ISP DEMARC
+        </Text>
+      )}
     </group>
   )
 }
@@ -644,7 +659,10 @@ function CurvedCable({ cable }) {
   const [hovered, setHovered] = useState(false)
   const lblRef = useRef()
   const matRef = useRef()
-  const { packetState, currentOsiLayer, removeCable } = useLabStore()
+  const packetState = useLabStore(s => s.packetState)
+  const currentOsiLayer = useLabStore(s => s.currentOsiLayer)
+  const removeCable = useLabStore(s => s.removeInfraCable)
+  const isMobile = useIsMobile()
 
   const curve = useMemo(() => {
     const v1 = new THREE.Vector3(...cable.source.pos)
@@ -659,7 +677,7 @@ function CurvedCable({ cable }) {
   const color = CABLE_TYPES[cable.type] || '#fff'
 
   useFrame((state) => {
-    if (hovered && lblRef.current) {
+    if (!isMobile && hovered && lblRef.current) {
       lblRef.current.style.transform = `translate3d(0, ${Math.sin(state.clock.elapsedTime * 6) * 5}px, 0)`
     }
     if (matRef.current) {
@@ -685,7 +703,7 @@ function CurvedCable({ cable }) {
         // Normal rendering
         matRef.current.color.set(color)
         matRef.current.emissive.set(color)
-        matRef.current.emissiveIntensity = hovered ? 1.0 : 0.6
+        matRef.current.emissiveIntensity = (!isMobile && hovered) ? 1.0 : 0.6
       }
     }
   })
@@ -693,16 +711,16 @@ function CurvedCable({ cable }) {
   return (
     <group>
       <mesh 
-        onPointerOver={(e) => { e.stopPropagation(); setHovered(true) }}
-        onPointerOut={() => setHovered(false)}
-        onClick={(e) => { e.stopPropagation(); removeCable(cable.id) }}
+        onPointerOver={!isMobile ? (e) => { e.stopPropagation(); setHovered(true) } : undefined}
+        onPointerOut={!isMobile ? () => setHovered(false) : undefined}
+        onClick={!isMobile ? (e) => { e.stopPropagation(); removeCable(cable.id) } : undefined}
       >
-        <tubeGeometry args={[curve, 32, 0.012, 8, false]} />
+        <tubeGeometry args={[curve, isMobile ? 12 : 32, 0.012, isMobile ? 4 : 8, false]} />
         <meshStandardMaterial ref={matRef} color={color} emissive={color} emissiveIntensity={0.6} />
       </mesh>
       
       {/* Antigrav floating label */}
-      {hovered && (
+      {!isMobile && hovered && (
         <Html position={curve.getPoint(0.5)} center>
           <div ref={lblRef} className="glass-panel" style={{
             padding: '4px 8px', borderRadius: '4px', background: 'rgba(0,0,0,0.8)',
@@ -723,7 +741,9 @@ function CurvedCable({ cable }) {
 }
 
 function InfraContent() {
-  const { infraCables, infraSelectedCable } = useLabStore()
+  const isMobile = useIsMobile()
+  const infraCables = useLabStore(s => s.infraCables)
+  const infraSelectedCable = useLabStore(s => s.infraSelectedCable)
   
   useEffect(() => {
     document.body.style.cursor = infraSelectedCable ? 'crosshair' : 'default'
@@ -732,39 +752,52 @@ function InfraContent() {
 
   return (
     <>
-      {/* Boosted Base Lighting */}
-      <ambientLight intensity={2.8} />
-      <hemisphereLight skyColor="#ffffff" groundColor="#0f172a" intensity={3.5} />
-      
-      {/* Main Key Light */}
-      <directionalLight position={[5, 10, 8]} intensity={5.0} castShadow />
-      <directionalLight position={[-3, 8, 5]} intensity={2.5} />
-      
-      {/* Front Fill Lights to illuminate the dark rack faces and ports */}
-      <pointLight position={[0, 5, 5]} intensity={6.0} color="#ffffff" distance={25} />
-      <pointLight position={[0, 2, 5]} intensity={6.0} color="#ffffff" distance={25} />
-      <pointLight position={[0, 3.5, 6]} intensity={4.0} color="#ffffff" distance={20} />
+      {isMobile ? (
+        <>
+          {/* Lightweight lighting for mobile to save GPU register pressure */}
+          <ambientLight intensity={3.5} />
+          <directionalLight position={[0, 5, 5]} intensity={3.5} />
+          <pointLight position={[0, RACK_H / 2, 4]} intensity={5.0} distance={15} />
+        </>
+      ) : (
+        <>
+          {/* Boosted Base Lighting */}
+          <ambientLight intensity={2.8} />
+          <hemisphereLight skyColor="#ffffff" groundColor="#0f172a" intensity={3.5} />
+          
+          {/* Main Key Light */}
+          <directionalLight position={[5, 10, 8]} intensity={5.0} castShadow />
+          <directionalLight position={[-3, 8, 5]} intensity={2.5} />
+          
+          {/* Front Fill Lights to illuminate the dark rack faces and ports */}
+          <pointLight position={[0, 5, 5]} intensity={6.0} color="#ffffff" distance={25} />
+          <pointLight position={[0, 2, 5]} intensity={6.0} color="#ffffff" distance={25} />
+          <pointLight position={[0, 3.5, 6]} intensity={4.0} color="#ffffff" distance={20} />
 
-      {/* Rack-focused lights — illuminate the front face directly */}
-      <pointLight position={[0, 1, 3]} intensity={3.0} color="#e0e8f0" distance={12} />
-      <pointLight position={[0, 4.5, 3]} intensity={3.0} color="#e0e8f0" distance={12} />
+          {/* Rack-focused lights — illuminate the front face directly */}
+          <pointLight position={[0, 1, 3]} intensity={3.0} color="#e0e8f0" distance={12} />
+          <pointLight position={[0, 4.5, 3]} intensity={3.0} color="#e0e8f0" distance={12} />
 
-      {/* Cyberpunk Accent Lights */}
-      <pointLight position={[-4, 3, 4]} intensity={3.5} color="#00ffc8" distance={25} />
-      <pointLight position={[4, 3, 4]} intensity={3.5} color="#e879f9" distance={25} />
+          {/* Cyberpunk Accent Lights */}
+          <pointLight position={[-4, 3, 4]} intensity={3.5} color="#00ffc8" distance={25} />
+          <pointLight position={[4, 3, 4]} intensity={3.5} color="#e879f9" distance={25} />
+        </>
+      )}
 
-      <Grid 
-        position={[0, 0, 0]} 
-        args={[30, 30]} 
-        cellSize={0.6} 
-        cellThickness={1.5} 
-        cellColor="#00ffc8" 
-        sectionSize={2.4} 
-        sectionThickness={2} 
-        sectionColor="#00aaff" 
-        fadeDistance={25} 
-        fadeStrength={1} 
-      />
+      {!isMobile && (
+        <Grid 
+          position={[0, 0, 0]} 
+          args={[30, 30]} 
+          cellSize={0.6} 
+          cellThickness={1.5} 
+          cellColor="#00ffc8" 
+          sectionSize={2.4} 
+          sectionThickness={2} 
+          sectionColor="#00aaff" 
+          fadeDistance={25} 
+          fadeStrength={1} 
+        />
+      )}
       <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[40, 40]} />
         <meshStandardMaterial color="#020408" metalness={0.8} roughness={0.2} />
@@ -800,14 +833,14 @@ function InfraContent() {
       <ExternalDemarc position={[2.0, 0.2, RACK_D/2]} />
 
       {/* Admin Workstation to the right of the rack */}
-      <AdminWorkstation position={[4.5, 0, RACK_D/2]} />
+      {!isMobile && <AdminWorkstation position={[4.5, 0, RACK_D/2]} />}
 
       {/* Render Dynamic Cables */}
       {infraCables.map(cable => (
         <CurvedCable key={cable.id} cable={cable} />
       ))}
 
-      <ContactShadows position={[0, 0.01, 0]} opacity={0.6} scale={10} blur={2} far={10} />
+      {!isMobile && <ContactShadows position={[0, 0.01, 0]} opacity={0.6} scale={10} blur={2} far={10} />}
       
       <OrbitControls 
         makeDefault 
@@ -832,8 +865,8 @@ export default function InfraScene() {
           alpha: false,
           powerPreference: isMobile ? 'low-power' : 'high-performance',
         }}
-        dpr={isMobile ? [1, 1.5] : [1, 2]}
-        frameloop={isMobile ? 'demand' : 'always'}
+        dpr={isMobile ? [1, 1] : [1, 1.5]}
+        frameloop="always"
         onCreated={({gl})=>gl.setClearColor('#030712')}
       >
         <Suspense fallback={null}>

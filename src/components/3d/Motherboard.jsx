@@ -22,11 +22,11 @@ export default function Motherboard({ ramSlotUnlocked, onSlotClick, installedCom
   const hasPower = installedComponents.includes('power_cable')
   const hasSata = installedComponents.includes('sata_cable')
 
-  // Generate SMD components (tiny chips, resistors)
+  // Generate SMD components (tiny chips, resistors) - heavily reduced count for performance
   const smdChips = []
   for (let x = -1.8; x <= 1.6; x += 0.35) {
     for (let z = -1.5; z <= 1.5; z += 0.4) {
-      if (Math.random() > 0.55) {
+      if (Math.random() > 0.85) { // Reduced from 0.55 to save ~40-50 draw calls
         smdChips.push([x + (Math.random() - 0.5) * 0.1, 0.075, z + (Math.random() - 0.5) * 0.1, Math.random()])
       }
     }
@@ -153,13 +153,11 @@ export default function Motherboard({ ramSlotUnlocked, onSlotClick, installedCom
           <group key={`rs-${i}`} position={[off, 0, 0]}>
             <mesh><boxGeometry args={[0.12, 0.03, 1.8]} />
               <meshStandardMaterial color={hasRam ? '#0a3d2e' : '#1a1a2e'} metalness={0.5} roughness={0.5} /></mesh>
-            {/* Individual pin contacts */}
-            {Array.from({ length: 20 }, (_, pi) => (
-              <mesh key={`pin-${pi}`} position={[0, 0.018, -0.85 + pi * 0.09]}>
-                <boxGeometry args={[0.06, 0.004, 0.04]} />
-                <meshStandardMaterial color="#c0a050" metalness={0.95} roughness={0.05} />
-              </mesh>
-            ))}
+            {/* Individual pin contacts -> Unified into a single visual bar for performance (saves 40 draw calls) */}
+            <mesh position={[0, 0.018, 0]}>
+              <boxGeometry args={[0.06, 0.004, 1.7]} />
+              <meshStandardMaterial color="#c0a050" metalness={0.95} roughness={0.05} />
+            </mesh>
             {/* Locking tabs */}
             {[-0.95, 0.95].map((z, ci) => (
               <group key={`clip-${ci}`} position={[0, 0.04, z]}
@@ -195,21 +193,17 @@ export default function Motherboard({ ramSlotUnlocked, onSlotClick, installedCom
       <group position={[2.0, 0.065, 0.1]}>
         <mesh><boxGeometry args={[0.28, 0.14, 0.95]} />
           <meshStandardMaterial color="#1a1a2e" metalness={0.5} roughness={0.5} /></mesh>
-        {/* Individual pin holes */}
-        {Array.from({ length: 12 }, (_, i) => (
-          <group key={`pwr-${i}`}>
-            <mesh position={[0.05, 0.075, -0.4 + i * 0.07]}>
-              <boxGeometry args={[0.03, 0.003, 0.03]} />
-              <meshStandardMaterial color={hasPower ? '#ff6b9d' : '#c0a050'} metalness={0.9} roughness={0.1}
-                emissive={hasPower ? '#ff6b9d' : '#000'} emissiveIntensity={hasPower ? 0.5 : 0} />
-            </mesh>
-            <mesh position={[-0.05, 0.075, -0.4 + i * 0.07]}>
-              <boxGeometry args={[0.03, 0.003, 0.03]} />
-              <meshStandardMaterial color={hasPower ? '#ff6b9d' : '#c0a050'} metalness={0.9} roughness={0.1}
-                emissive={hasPower ? '#ff6b9d' : '#000'} emissiveIntensity={hasPower ? 0.5 : 0} />
-            </mesh>
-          </group>
-        ))}
+        {/* Individual pin holes -> Unified to two solid bars for performance (saves 24 draw calls) */}
+        <mesh position={[0.05, 0.075, 0]}>
+          <boxGeometry args={[0.03, 0.003, 0.85]} />
+          <meshStandardMaterial color={hasPower ? '#ff6b9d' : '#c0a050'} metalness={0.9} roughness={0.1}
+            emissive={hasPower ? '#ff6b9d' : '#000'} emissiveIntensity={hasPower ? 0.5 : 0} />
+        </mesh>
+        <mesh position={[-0.05, 0.075, 0]}>
+          <boxGeometry args={[0.03, 0.003, 0.85]} />
+          <meshStandardMaterial color={hasPower ? '#ff6b9d' : '#c0a050'} metalness={0.9} roughness={0.1}
+            emissive={hasPower ? '#ff6b9d' : '#000'} emissiveIntensity={hasPower ? 0.5 : 0} />
+        </mesh>
         {/* Connector latch */}
         <mesh position={[0.15, 0.08, 0]}><boxGeometry args={[0.02, 0.1, 0.5]} />
           <meshStandardMaterial color="#333" metalness={0.8} roughness={0.3} /></mesh>

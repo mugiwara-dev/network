@@ -304,7 +304,7 @@ export default function HelpPanel() {
                 { icon: '👁️', text: 'Ghost outlines inside the chassis show WHERE each part goes. Brighter = next step!', color: '#00aaff' },
                 { icon: '🖱️', text: 'Click a component card on the right, then click it again to install/place it.', color: '#00ffc8' },
                 { icon: '🔌', text: 'Glowing dots inside the case show cable connector ports. Select a cable to see its route.', color: '#ff6b9d' },
-                { icon: '🪛', text: 'PSU, HDD, & SSD need 4 screw clicks — look for the amber screw hole markers on the 3D model.', color: '#f59e0b' },
+                { icon: '📦', text: 'PSU, HDD, & SSD are mounted instantly when placed, bypassing slow screw installation.', color: '#00ffc8' },
                 { icon: '🔓', text: 'Unlock the RAM slot retention clips BEFORE inserting the DDR4 stick.', color: '#00ffc8' },
                 { icon: '⚡', text: 'Install PSU first → it unlocks power cable, SATA cable, and main power.', color: '#f59e0b' },
                 { icon: '🧊', text: 'CPU Cooler requires CPU installed first — it sits directly on top of the processor.', color: '#f97316' },

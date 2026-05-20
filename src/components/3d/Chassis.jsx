@@ -24,11 +24,11 @@ export default function Chassis({ powerOnState }) {
       <mesh position={[0, 0, -D/2]}>
         <boxGeometry args={[W, H, T]} /><meshStandardMaterial color={F} metalness={M} roughness={R} />
       </mesh>
-      {/* Left side (open/transparent for visibility) */}
-      <mesh position={[-W/2, 0, 0]}>
+      {/* Left side panel (removed transparent glass to fix extreme fill-rate lag on mobile/low-end GPUs) */}
+      {/* <mesh position={[-W/2, 0, 0]}>
         <boxGeometry args={[T, H, D]} />
         <meshStandardMaterial color="#0a0e14" metalness={0.5} roughness={0.3} transparent opacity={0.15} />
-      </mesh>
+      </mesh> */}
       {/* Right side panel */}
       <mesh position={[W/2, 0, 0]}>
         <boxGeometry args={[T, H, D]} /><meshStandardMaterial color={F} metalness={M} roughness={R} />
@@ -87,10 +87,10 @@ export default function Chassis({ powerOnState }) {
         ))}
       </group>
 
-      {/* Front panel area */}
+      {/* Front panel area (made opaque to prevent massive depth-sorting lag) */}
       <mesh position={[0, 0, D/2]}>
         <boxGeometry args={[W, H, T]} />
-        <meshStandardMaterial color="#080c14" metalness={0.8} roughness={0.2} transparent opacity={0.5} />
+        <meshStandardMaterial color="#080c14" metalness={0.8} roughness={0.2} />
       </mesh>
 
       {/* Front panel USB/Power button area */}

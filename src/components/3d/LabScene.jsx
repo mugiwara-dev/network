@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, ContactShadows } from '@react-three/drei'
 import Workbench from './Workbench'
@@ -36,18 +36,33 @@ const MODELS = {
 }
 
 function SceneContent({ isMobile }) {
-  const store = useLabStore()
-  const { components,ramSlotUnlocked,hoveredComponent,cableAnimations,powerOnState,
-    toggleRamSlot,installComponent,setHovered,setSelected,isComponentLocked,selectedComponent,
-    placedComponents,screwProgress,addScrew } = store
+  // Subscribe only to needed pieces of state to avoid re-rendering the entire scene
+  const components = useLabStore(s => s.components)
+  const ramSlotUnlocked = useLabStore(s => s.ramSlotUnlocked)
+  const hoveredComponent = useLabStore(s => s.hoveredComponent)
+  const cableAnimations = useLabStore(s => s.cableAnimations)
+  const powerOnState = useLabStore(s => s.powerOnState)
 
-  const get = id => components.find(c=>c.id===id)
-  const installedIds = components.filter(c=>c.installed).map(c=>c.id)
+  const toggleRamSlot = useLabStore(s => s.toggleRamSlot)
+  const installComponent = useLabStore(s => s.installComponent)
+  const setHovered = useLabStore(s => s.setHovered)
+  const setSelected = useLabStore(s => s.setSelected)
+  const isComponentLocked = useLabStore(s => s.isComponentLocked)
+  const selectedComponent = useLabStore(s => s.selectedComponent)
+  const placedComponents = useLabStore(s => s.placedComponents)
+  const screwProgress = useLabStore(s => s.screwProgress)
+  const addScrew = useLabStore(s => s.addScrew)
 
-  const nextStep = TUTORIAL_STEPS.find(step => {
-    const comp = components.find(c => c.id === step.component)
-    return comp && !comp.installed
-  }) || null
+  const get = id => components.find(c => c.id === id)
+
+  const installedIds = useMemo(() => components.filter(c => c.installed).map(c => c.id), [components])
+
+  const nextStep = useMemo(() => {
+    return TUTORIAL_STEPS.find(step => {
+      const comp = components.find(c => c.id === step.component)
+      return comp && !comp.installed
+    }) || null
+  }, [components])
 
   const click = comp => {
     if (selectedComponent !== comp.id) {
@@ -64,26 +79,21 @@ function SceneContent({ isMobile }) {
   })
 
   return <>
-    {/* LIGHTING — reduced on mobile for performance */}
-    <ambientLight intensity={isMobile ? 3.0 : 2.0}/>
-    <directionalLight position={[5,10,3]} intensity={isMobile ? 4.0 : 3.5}
-      castShadow={!isMobile} shadow-mapSize={isMobile ? [512,512] : [2048,2048]}/>
+    {/* LIGHTING — optimized for performance on all devices */}
+    <ambientLight intensity={isMobile ? 2.5 : 2.0}/>
+    <directionalLight position={[5,10,3]} intensity={3.5}
+      castShadow={!isMobile} shadow-mapSize={isMobile ? [256,256] : [1024,1024]}/>
     {!isMobile && <>
-      <directionalLight position={[-5,6,-3]} intensity={1.8}/>
-      <directionalLight position={[0,8,8]} intensity={1.5}/>
-      <pointLight position={[-3,4,-2]} intensity={2.5} color="#00ffc8" distance={20}/>
-      <pointLight position={[3,3,2]} intensity={2.0} color="#00aaff" distance={20}/>
-      <pointLight position={[0,5,0]} intensity={1.5} color="#7b5ea7" distance={20}/>
-      <pointLight position={[1.5,-1,0]} intensity={1.5} color="#f59e0b" distance={12}/>
-      <pointLight position={[0,2,4]} intensity={3.0} color="#ffffff" distance={18}/>
-      <pointLight position={[-2,0,2]} intensity={1.2} color="#ffffff" distance={12}/>
+      {/* Reduced from 8 point lights to just 2 fill lights for desktop */}
+      <directionalLight position={[-5,6,-3]} intensity={1.5}/>
+      <pointLight position={[-3,4,-2]} intensity={2.0} color="#00ffc8" distance={20}/>
+      <pointLight position={[3,3,2]} intensity={1.5} color="#00aaff" distance={20}/>
     </>}
     {isMobile && <>
-      {/* Mobile: just 2 fill lights instead of 8 */}
-      <pointLight position={[0,4,4]} intensity={2.0} color="#ffffff" distance={20}/>
-      <pointLight position={[-2,2,2]} intensity={1.5} color="#00ffc8" distance={16}/>
+      {/* Mobile: 1 fill light */}
+      <pointLight position={[0,4,4]} intensity={1.5} color="#ffffff" distance={20}/>
     </>}
-    <hemisphereLight args={isMobile ? ['#6080a0','#0a0f18',1.5] : ['#4a6a8a','#0a0f18',1.2]}/>
+    <hemisphereLight args={['#6080a0','#0a0f18',1.2]}/>
     {!isMobile && <fog attach="fog" args={['#050b18',22,45]}/>}
 
     <Workbench/>
@@ -128,13 +138,10 @@ function SceneContent({ isMobile }) {
         ]}/>
     ))}
 
-    {/* Particles — desktop only */}
-    {!isMobile && <ParticleField count={200}/>}
+    {/* Particles — desktop only, reduced count for performance */}
+    {!isMobile && <ParticleField count={60}/>}
 
-    {/* Contact shadows — desktop only (extra render pass, too expensive on mobile) */}
-    {!isMobile && (
-      <ContactShadows position={[0,-2.8,0]} opacity={0.3} scale={18} blur={2} far={5}/>
-    )}
+    {/* Contact shadows — removed for performance on all devices */}
 
     <OrbitControls makeDefault
       minPolarAngle={Math.PI/8} maxPolarAngle={Math.PI/2.1}
@@ -157,9 +164,13 @@ export default function LabScene() {
           alpha: false,
           powerPreference: isMobile ? 'low-power' : 'high-performance',
         }}
-        dpr={isMobile ? [1, 1.5] : [1, 2]}
-        frameloop={isMobile ? 'demand' : 'always'}
-        onCreated={({gl})=>gl.setClearColor('#030712')}
+        dpr={isMobile ? [1, 1] : [1, 1.5]}
+        frameloop="always"
+        onCreated={({gl})=>{
+          gl.setClearColor('#030712')
+          // Disable expensive shadow features
+          gl.shadowMap.type = 1 // THREE.PCFShadowMap instead of PCFSoftShadowMap
+        }}
       >
         <Suspense fallback={null}>
           <SceneContent isMobile={isMobile}/>

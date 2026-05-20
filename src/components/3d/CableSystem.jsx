@@ -7,13 +7,13 @@ function Cable({ points, color, progress=1, thickness=0.03 }) {
   const {geo,geoInner} = useMemo(() => {
     if (progress <= 0) return {geo:null,geoInner:null}
     const curve = new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)))
-    const allPts = curve.getPoints(64)
-    const ct = Math.max(2,Math.floor(65*progress))
+    const allPts = curve.getPoints(24)
+    const ct = Math.max(2,Math.floor(25*progress))
     const partial = new THREE.CatmullRomCurve3(allPts.slice(0,ct))
-    const seg = Math.max(2,Math.floor(64*progress))
+    const seg = Math.max(2,Math.floor(24*progress))
     return {
-      geo: new THREE.TubeGeometry(partial,seg,thickness,8,false),
-      geoInner: new THREE.TubeGeometry(partial,seg,thickness*0.35,6,false),
+      geo: new THREE.TubeGeometry(partial,seg,thickness,5,false),
+      geoInner: new THREE.TubeGeometry(partial,seg,thickness*0.35,4,false),
     }
   }, [points, progress, thickness])
 
@@ -60,7 +60,7 @@ function GhostCable({ points, color, isSelected=false }) {
 function Endpoint({position,color}) {
   const r=useRef()
   useFrame(s=>{if(r.current)r.current.scale.setScalar(1+Math.sin(s.clock.elapsedTime*4)*0.15)})
-  return <mesh ref={r} position={position}><sphereGeometry args={[0.05,10,10]}/><meshStandardMaterial color={color} emissive={color} emissiveIntensity={1} transparent opacity={0.5}/></mesh>
+  return <mesh ref={r} position={position}><sphereGeometry args={[0.05,6,6]}/><meshStandardMaterial color={color} emissive={color} emissiveIntensity={1} transparent opacity={0.5}/></mesh>
 }
 
 const CABLES = {

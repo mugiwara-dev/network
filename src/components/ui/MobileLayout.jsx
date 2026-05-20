@@ -569,69 +569,98 @@ export default function MobileLayout({ activeTab, powerOnState, packetState, isT
       <QuizModal />
       <AchievementPopup />
 
-      {/* ─── TOP BAR ─── */}
+      {/* ─── TOP BAR (with integrated Tab Switcher) ─── */}
       <div style={{
         position:'absolute',top:0,left:0,right:0,zIndex:40,
         background:'#050a18',   /* solid — no blur compositing */
         borderBottom:'1px solid rgba(0,255,200,0.2)',
-        padding:'8px 12px',
-        display:'flex',alignItems:'center',justifyContent:'space-between',
+        padding:'8px 12px 10px 12px',
+        display:'flex',flexDirection:'column',gap:'8px',
       }}>
-        {/* Logo */}
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <span style={{fontSize:16}}>🔧</span>
-          <span style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,fontWeight:900,
-            background:'linear-gradient(135deg,#00ffc8,#00aaff)',
-            WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',
-            letterSpacing:2,textTransform:'uppercase'}}>
-            IT Sandbox
-          </span>
+        {/* Row 1: Logo and drawer button */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          {/* Logo */}
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:14}}>🔧</span>
+            <span style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,fontWeight:900,
+              background:'linear-gradient(135deg,#00ffc8,#00aaff)',
+              WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',
+              letterSpacing:2,textTransform:'uppercase'}}>
+              IT Sandbox
+            </span>
+          </div>
+
+          {/* Open drawer button */}
+          <button onClick={() => setDrawerOpen(true)} style={{
+            background:'rgba(0,255,200,0.1)',border:'1px solid rgba(0,255,200,0.3)',
+            borderRadius:8,padding:'4px 10px',color:'#00ffc8',cursor:'pointer',
+            fontFamily:"'Orbitron',sans-serif",fontSize:9,letterSpacing:1,
+            display:'flex',alignItems:'center',gap:4,minHeight:28
+          }}>
+            <span>☰</span>
+            <span>Panel</span>
+          </button>
         </div>
 
-        {/* Open drawer button */}
-        <button onClick={() => setDrawerOpen(true)} style={{
-          background:'rgba(0,255,200,0.1)',border:'1px solid rgba(0,255,200,0.3)',
-          borderRadius:8,padding:'6px 12px',color:'#00ffc8',cursor:'pointer',
-          fontFamily:"'Orbitron',sans-serif",fontSize:9,letterSpacing:1,
-          display:'flex',alignItems:'center',gap:6,minHeight:36
+        {/* Row 2: Cyber Tabs switcher */}
+        <div style={{
+          display:'flex',
+          justifyContent:'space-between',
+          background:'rgba(0,0,0,0.3)',
+          borderRadius:6,
+          padding:2,
+          border:'1px solid rgba(255,255,255,0.05)',
         }}>
-          <span>☰</span>
-          <span>Panel</span>
-        </button>
-      </div>
-
-      {/* ─── BOTTOM NAV BAR ─── */}
-      <div style={{
-        position:'absolute',bottom:0,left:0,right:0,zIndex:40,
-        background:'#050a18',   /* solid — no blur compositing */
-        borderTop:'1px solid rgba(255,255,255,0.1)',
-        display:'flex',
-      }}>
-        {TABS.map(tab => (
-          <button key={tab.id}
-            onClick={() => {
-              useLabStore.setState({ activeTab: tab.id })
-              setDrawerOpen(false)
-            }}
-            style={{
-              flex:1,padding:'10px 4px',background:'none',border:'none',cursor:'pointer',
-              display:'flex',flexDirection:'column',alignItems:'center',gap:2,
-              borderTop: activeTab===tab.id ? '2px solid #00ffc8' : '2px solid transparent',
-            }}>
-            <span style={{fontSize:18}}>{tab.icon}</span>
-            <span style={{fontFamily:"'Orbitron',sans-serif",fontSize:7,letterSpacing:0.5,
-              color: activeTab===tab.id ? '#00ffc8' : '#64748b',
-              textTransform:'uppercase'}}>
-              {tab.label}
-            </span>
-          </button>
-        ))}
+          {TABS.map(tab => {
+            const isActive = activeTab === tab.id
+            const colors = {
+              hardware: '#00ffc8',
+              network: '#00aaff',
+              infra: '#e879f9',
+              simulator: '#00d4ff',
+            }
+            const tabColor = colors[tab.id] || '#00ffc8'
+            return (
+              <button key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id)
+                  setDrawerOpen(false)
+                }}
+                style={{
+                  flex:1,
+                  padding:'6px 2px',
+                  background: isActive ? 'rgba(255,255,255,0.04)' : 'transparent',
+                  border:'none',
+                  borderRadius:4,
+                  cursor:'pointer',
+                  display:'flex',
+                  alignItems:'center',
+                  justifyContent:'center',
+                  gap:4,
+                  transition:'all 0.2s',
+                  boxShadow: isActive ? `inset 0 0 4px ${tabColor}30` : 'none',
+                }}>
+                <span style={{fontSize:11}}>{tab.icon}</span>
+                <span style={{
+                  fontFamily:"'Orbitron',sans-serif",
+                  fontSize:8,
+                  fontWeight: isActive ? 700 : 500,
+                  letterSpacing:0.5,
+                  color: isActive ? tabColor : '#64748b',
+                  textTransform:'uppercase'
+                }}>
+                  {tab.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Success indicator (mobile compact) */}
       {powerOnState==='success' && activeTab==='hardware' && (
         <div style={{
-          position:'absolute',top:56,left:'50%',transform:'translateX(-50%)',zIndex:50,
+          position:'absolute',top:96,left:'50%',transform:'translateX(-50%)',zIndex:50,
           background:'rgba(16,185,129,0.15)',border:'1px solid #10b981',borderRadius:20,
           padding:'4px 14px',display:'flex',alignItems:'center',gap:6
         }}>

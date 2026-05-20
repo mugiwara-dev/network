@@ -17,7 +17,7 @@ export const XP = {
 // ═══ ACHIEVEMENTS ═══
 export const ACHIEVEMENTS = [
   { id:'first_install',   icon:'🔧', title:'First Install',     desc:'Install your first component',          xp:50,   condition: s => s.components.filter(c=>c.installed).length >= 1 },
-  { id:'screw_master',   icon:'🔩', title:'Screw Master',      desc:'Tighten all screws on a component',      xp:80,   condition: s => Object.values(s.screwProgress).some(v=>v>=4) },
+  { id:'screw_master',   icon:'🔩', title:'Hardware Securer',  desc:'Install the PSU, HDD, and SSD',          xp:80,   condition: s => s.components.filter(c => [C.PSU, C.HDD, C.SSD].includes(c.id)).every(c => c.installed) },
   { id:'power_on',       icon:'⚡', title:'Power On!',          desc:'Successfully complete a POST test',      xp:200,  condition: s => s.powerOnState === 'success' },
   { id:'cable_runner',   icon:'🔌', title:'Cable Runner',      desc:'Connect 3 cables',                       xp:100,  condition: s => s.components.filter(c=>c.category==='cable'&&c.installed).length >= 3 },
   { id:'full_build',     icon:'🏆', title:'Full Build',        desc:'Install all 14 components',              xp:500,  condition: s => s.components.every(c=>c.installed) },
@@ -38,8 +38,8 @@ export const C = {
 // Keep old export name
 export const COMPONENT_IDS = C
 
-// Components that require 4 manual screw clicks to lock
-export const SCREWABLE = [C.PSU, C.HDD, C.SSD]
+// Components that require manual screw clicks to lock (disabled for mobile and performance optimization)
+export const SCREWABLE = []
 export const SCREWS_REQUIRED = 4
 
 export const DEPENDENCIES = {
@@ -65,11 +65,11 @@ export const BEEP_CODES = {
 
 // Assembly tutorial steps
 export const TUTORIAL_STEPS = [
-  { id: 1, title: 'Install the PSU', desc: 'Place the power supply into the bottom bay. Secure with 4 screws.', component: C.PSU },
+  { id: 1, title: 'Install the PSU', desc: 'Place and seat the power supply into the bottom chassis bay.', component: C.PSU },
   { id: 2, title: 'Seat the CPU', desc: 'Align the triangle marker and place the i3-10100 into the LGA1200 socket.', component: C.CPU },
   { id: 3, title: 'Mount CPU Cooler', desc: 'Apply thermal paste (simulated) and lock the stock cooler onto the CPU.', component: C.CPU_COOLER },
   { id: 4, title: 'Install RAM', desc: 'Unlock the DIMM slot clips, then press the 8GB DDR4 stick until it clicks.', component: C.RAM },
-  { id: 5, title: 'Install Storage', desc: 'Mount the 120GB SSD and 500GB HDD into the drive cage. Secure with screws.', component: C.SSD },
+  { id: 5, title: 'Install Storage', desc: 'Mount and seat the 120GB SSD and 500GB HDD into the drive cage.', component: C.SSD },
   { id: 6, title: 'Connect Cables', desc: 'Wire the 24-pin ATX, SATA data, SATA power, and front panel headers.', component: C.POWER_CABLE },
 ]
 
@@ -412,10 +412,12 @@ export const useLabStore = create(
     // If already placed (waiting for screws), ignore
     if (placedComponents[id]) { get().addToast(`🪛 Tighten the screws to secure ${comp.name}!`, 'warn'); return }
     if (id === C.RAM && !ramSlotUnlocked) { get().addToast('⚠️ Unlock RAM slot first!','danger'); return }
+    const isCable = comp?.category === 'cable'
     const deps = DEPENDENCIES[id] || []
     for (const d of deps) {
       const dc = components.find(c => c.id === d)
-      if (!dc.installed) { get().addToast(`⚠️ Install ${dc.name} first!`,'danger'); return }
+      const depMet = isCable ? (dc.installed || placedComponents[d]) : dc.installed
+      if (!depMet) { get().addToast(`⚠️ Install ${dc.name} first!`,'danger'); return }
     }
 
     // If screwable, enter "placed" state — user must click screw holes
@@ -484,8 +486,9 @@ export const useLabStore = create(
     for (const sid of SCREWABLE) {
       const comp = components.find(c => c.id === sid)
       if (comp?.installed) continue
+      const isPlaced = get().placedComponents[sid]
       const progress = screwProgress[sid] || 0
-      if (progress > 0 && progress < SCREWS_REQUIRED) {
+      if (isPlaced) {
         beepErrors.push({ ...BEEP_CODES.SCREW_LOOSE, detail: `${comp.name}: ${progress}/${SCREWS_REQUIRED} screws` })
       }
     }
@@ -539,7 +542,7 @@ export const useLabStore = create(
 
   // ═══ GAMIFICATION ACTIONS ═══
   addXP: (amount, reason='') => {
-    const { xp } = get()
+    const { xp, level } = get()
     const newXp = xp + amount
     const newLevel = Math.floor(newXp / 300) + 1
     const didLevelUp = newLevel > level
@@ -638,9 +641,38 @@ export const useLabStore = create(
     const c = get().components
     return { total: c.length, done: c.filter(x=>x.installed).length }
   },
+  migratePlacedComponents: () => {
+    const { components, placedComponents } = get()
+    let changed = false
+    const nextComponents = components.map(comp => {
+      if (placedComponents[comp.id] && !comp.installed) {
+        changed = true
+        return { ...comp, installed: true }
+      }
+      return comp
+    })
+
+    if (changed) {
+      const nextPlaced = { ...placedComponents }
+      components.forEach(comp => {
+        if (placedComponents[comp.id]) {
+          nextPlaced[comp.id] = false
+        }
+      })
+      set({
+        components: nextComponents,
+        placedComponents: nextPlaced,
+      })
+    }
+  },
     }),
     {
       name: 'it-sandbox-hardware-state',
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.migratePlacedComponents()
+        }
+      },
       partialize: (state) => ({
         components: state.components,
         ramSlotUnlocked: state.ramSlotUnlocked,

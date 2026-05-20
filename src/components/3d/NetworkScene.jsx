@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Text, Line, Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { useLabStore } from '../../store/useLabStore'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 const OSI_LAYERS = [
   { level: 7, name: 'Application', color: '#ff00ff' },
@@ -15,6 +16,7 @@ const OSI_LAYERS = [
 ]
 
 function NodeBlock({ position, title, icon, color }) {
+  const isMobile = useIsMobile()
   return (
     <group position={position}>
       <mesh castShadow>
@@ -25,15 +27,33 @@ function NodeBlock({ position, title, icon, color }) {
         <boxGeometry args={[1.4, 1.1, 0.05]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} transparent opacity={0.3} />
       </mesh>
-      <Html position={[0, 0.2, 0.3]} transform center style={{ color: '#fff', fontSize: '24px' }}>
-        {icon}
-      </Html>
-      <Html position={[0, -0.25, 0.3]} transform center style={{ 
-        color: color, fontFamily: "'Orbitron', sans-serif", fontSize: '10px', 
-        fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', whiteSpace: 'nowrap' 
-      }}>
-        {title}
-      </Html>
+      {!isMobile ? (
+        <Html position={[0, 0.2, 0.3]} transform center style={{ color: '#fff', fontSize: '24px' }}>
+          {icon}
+        </Html>
+      ) : (
+        <Text position={[0, 0.2, 0.28]} fontSize={0.35} anchorX="center" anchorY="middle">
+          {icon}
+        </Text>
+      )}
+      {!isMobile ? (
+        <Html position={[0, -0.25, 0.3]} transform center style={{ 
+          color: color, fontFamily: "'Orbitron', sans-serif", fontSize: '10px', 
+          fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', whiteSpace: 'nowrap' 
+        }}>
+          {title}
+        </Html>
+      ) : (
+        <Text 
+          position={[0, -0.25, 0.28]} 
+          fontSize={0.12} 
+          color={color} 
+          anchorX="center" 
+          anchorY="middle"
+        >
+          {title}
+        </Text>
+      )}
     </group>
   )
 }
@@ -79,6 +99,7 @@ function PacketAnimation({ startNode, endNode, onComplete }) {
 }
 
 function OsiLayers({ position, currentLayer }) {
+  const isMobile = useIsMobile()
   return (
     <group position={position}>
       {OSI_LAYERS.map((layer, idx) => {
@@ -96,13 +117,25 @@ function OsiLayers({ position, currentLayer }) {
                 transparent opacity={isActive ? 0.8 : 0.2} 
               />
             </mesh>
-            <Html position={[1.3, 0, 0]} transform style={{
-              fontFamily: "'JetBrains Mono', monospace", fontSize: '10px',
-              color: isActive ? layer.color : '#64748b', whiteSpace: 'nowrap',
-              textShadow: isCurrent ? `0 0 5px ${layer.color}` : 'none'
-            }}>
-              L{layer.level} {layer.name}
-            </Html>
+            {!isMobile ? (
+              <Html position={[1.3, 0, 0]} transform style={{
+                fontFamily: "'JetBrains Mono', monospace", fontSize: '10px',
+                color: isActive ? layer.color : '#64748b', whiteSpace: 'nowrap',
+                textShadow: isCurrent ? `0 0 5px ${layer.color}` : 'none'
+              }}>
+                L{layer.level} {layer.name}
+              </Html>
+            ) : (
+              <Text 
+                position={[1.3, 0, 0.05]} 
+                fontSize={0.14} 
+                color={isActive ? layer.color : '#64748b'}
+                anchorX="left" 
+                anchorY="middle"
+              >
+                L{layer.level} {layer.name}
+              </Text>
+            )}
           </group>
         )
       })}
@@ -111,7 +144,10 @@ function OsiLayers({ position, currentLayer }) {
 }
 
 function NetworkContent() {
-  const { packetState, currentOsiLayer, startPacketAnimation, setPacketState } = useLabStore()
+  // Subscribe only to required state to avoid unrelated re-renders
+  const packetState = useLabStore(s => s.packetState)
+  const currentOsiLayer = useLabStore(s => s.currentOsiLayer)
+  const startPacketAnimation = useLabStore(s => s.startPacketAnimation)
   const [animPhase, setAnimPhase] = useState('idle') // idle, osi, pc_to_router, router_to_cloud
   
   const NODE_PC = [-4, 0, 0]
@@ -180,10 +216,17 @@ function NetworkContent() {
 }
 
 export default function NetworkScene() {
+  const isMobile = useIsMobile()
   return (
     <div style={{width:'100%',height:'100%',position:'absolute',inset:0}}>
-      <Canvas camera={{position:[0, 3, 10],fov:45}}
-        gl={{antialias:true,alpha:false}} onCreated={({gl})=>gl.setClearColor('#030712')}>
+      <Canvas camera={{position:[0, 3, 10],fov:isMobile ? 55 : 45}}
+        gl={{
+          antialias: !isMobile,
+          alpha: false,
+          powerPreference: isMobile ? 'low-power' : 'high-performance',
+        }}
+        dpr={isMobile ? [1, 1] : [1, 1.5]}
+        onCreated={({gl})=>gl.setClearColor('#030712')}>
         <Suspense fallback={null}><NetworkContent/></Suspense>
       </Canvas>
     </div>

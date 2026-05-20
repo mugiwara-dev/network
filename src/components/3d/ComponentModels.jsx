@@ -93,7 +93,7 @@ function ScrewHole({position, onScrew, done=false, index=0}) {
   // ═══ UNSCREWED STATE: highly visible animated indicator ═══
   return (
     <group position={position}
-      onClick={(e) => { e.stopPropagation(); onScrew?.() }}
+      onPointerDown={(e) => { e.stopPropagation(); onScrew?.() }}
       onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'crosshair' }}
       onPointerOut={() => { document.body.style.cursor = 'default' }}
     >
@@ -159,8 +159,8 @@ function ScrewHole({position, onScrew, done=false, index=0}) {
 
       {/* ▌ LARGE INVISIBLE HIT AREA — easy to click ▌ */}
       <mesh>
-        <sphereGeometry args={[0.25, 8, 8]} />
-        <meshStandardMaterial transparent opacity={0} depthWrite={false} />
+        <sphereGeometry args={[0.3, 8, 8]} />
+        <meshBasicMaterial colorWrite={false} depthWrite={false} />
       </mesh>
     </group>
   )
