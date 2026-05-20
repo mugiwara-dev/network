@@ -248,6 +248,22 @@ export const useLabStore = create(
       return
     }
 
+    const isPowerPort = (id) => id.includes('pwr') || id.startsWith('ups_p')
+    const clickedIsPower = isPowerPort(portId)
+
+    // Validate if the clicked port is compatible with the selected cable type
+    if (infraSelectedCable === 'power') {
+      if (!clickedIsPower) {
+        get().addToast('Incompatible: Power cables can only connect to Power ports (PWR) or UPS outlets!', 'danger')
+        return
+      }
+    } else {
+      if (clickedIsPower) {
+        get().addToast(`Incompatible: Data cables (${infraSelectedCable.toUpperCase()}) cannot plug into Power ports or UPS outlets!`, 'danger')
+        return
+      }
+    }
+
     if (!infraSelectedPort) {
       set({ infraSelectedPort: { id: portId, pos, name } })
       get().addToast(`Source: ${name} selected. Click destination port.`, 'info')

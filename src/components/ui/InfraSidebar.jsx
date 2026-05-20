@@ -5,6 +5,7 @@ const CABLE_TYPES = [
   { id: 'fiber', name: 'Fiber SFP+', color: '#39ff14', desc: 'High-speed optical link.' },
   { id: 'cat5e', name: 'CAT5e Cable', color: '#ffff00', desc: 'Up to 1Gbps, shorter runs.' },
   { id: 'cat6a', name: 'CAT6a Cable', color: '#bd00ff', desc: '10Gbps up to 100 meters.' },
+  { id: 'power', name: 'Power Cable', color: '#f43f5e', desc: 'AC power to devices.' },
 ]
 
 export default function InfraSidebar() {

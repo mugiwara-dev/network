@@ -21,19 +21,25 @@ const CABLE_TYPES = {
 
 function FloatingLabel({ text, color, offsetX = 0 }) {
   const isMobile = useIsMobile()
-  if (isMobile) return null
+  
+  // Adjust sizing and offset on mobile so component names fit perfectly on narrower viewports
+  const fontSize = isMobile ? 0.14 : 0.22
+  const lineLength = isMobile ? 0.35 - offsetX : 0.6 - offsetX
+  const linePos = isMobile ? -1.35 + offsetX / 2 : -1.5 + offsetX / 2
+  const textPos = isMobile ? -1.55 + offsetX : -1.85 + offsetX
+
   return (
     <group position={[0, 0, 0]}>
       {/* Horizontal Connector Line */}
-      <mesh position={[-1.5 + offsetX / 2, 0, 1.51]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.005, 0.005, 0.6 - offsetX]} />
+      <mesh position={[linePos, 0, 1.51]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.003, 0.003, lineLength]} />
         <meshBasicMaterial color={color} transparent opacity={0.5} toneMapped={false} />
       </mesh>
       
       {/* Floating Text */}
       <Text 
-        position={[-1.85 + offsetX, 0, 1.51]} 
-        fontSize={0.22} 
+        position={[textPos, 0, 1.51]} 
+        fontSize={fontSize} 
         color={color} 
         anchorX="right" 
         anchorY="middle"
@@ -53,7 +59,55 @@ function ClickablePort({ position, portId, name, size=[0.06, 0.08, 0.02], label 
   const isMobile = useIsMobile()
   
   const isSelected = infraSelectedPort?.id === portId
-  const showHighlight = isSelected || (hovered && infraSelectedCable)
+  const isPowerPort = portId.includes('pwr') || portId.startsWith('ups_p')
+  
+  // Assess compatibility with currently selected cable
+  const isCompatible = useMemo(() => {
+    if (!infraSelectedCable) return false
+    if (infraSelectedCable === 'power') {
+      return isPowerPort
+    } else {
+      return !isPowerPort
+    }
+  }, [infraSelectedCable, portId, isPowerPort])
+
+  // Get active indicator colors based on cable selection
+  const activeColor = useMemo(() => {
+    if (infraSelectedCable === 'power') return '#f59e0b' // Amber/Orange
+    if (infraSelectedCable === 'fiber') return '#39ff14' // Neon Green
+    if (infraSelectedCable) return '#00aaff' // Neon Blue for CAT6/5e/6a
+    return '#00ffc8' // Standard fallback highlight
+  }, [infraSelectedCable])
+
+  const glowRef = useRef()
+  const portMeshRef = useRef()
+
+  useFrame((state) => {
+    // Dynamic pulsing emissive light for compatibility or active selection
+    if (portMeshRef.current) {
+      if (isSelected) {
+        portMeshRef.current.material.emissive.set(activeColor)
+        portMeshRef.current.material.emissiveIntensity = 1.5
+      } else if (hovered && infraSelectedCable) {
+        portMeshRef.current.material.emissive.set(activeColor)
+        portMeshRef.current.material.emissiveIntensity = 1.0
+      } else if (isCompatible) {
+        // High-tech breathing glow effect for compatible targets
+        const pulse = 0.4 + Math.sin(state.clock.elapsedTime * 6) * 0.3
+        portMeshRef.current.material.emissive.set(activeColor)
+        portMeshRef.current.material.emissiveIntensity = pulse
+      } else {
+        portMeshRef.current.material.emissive.set('#000000')
+        portMeshRef.current.material.emissiveIntensity = 0
+      }
+    }
+
+    // Dynamic rotation and breathing scale for the futuristic wireframe guide ring
+    if (glowRef.current) {
+      glowRef.current.rotation.z = state.clock.elapsedTime * 1.5
+      glowRef.current.scale.setScalar(1.25 + Math.sin(state.clock.elapsedTime * 8) * 0.15)
+    }
+  })
 
   return (
     <group 
@@ -76,22 +130,50 @@ function ClickablePort({ position, portId, name, size=[0.06, 0.08, 0.02], label 
       </mesh>
       
       {/* Visible Port Graphic */}
-      <mesh>
+      <mesh ref={portMeshRef}>
         <boxGeometry args={size} />
         <meshStandardMaterial 
-          color={showHighlight ? '#00ffc8' : '#111'} 
-          emissive={showHighlight ? '#00ffc8' : '#000'} 
+          color={isSelected || (hovered && infraSelectedCable) ? activeColor : '#111111'} 
+          emissive={isSelected || (hovered && infraSelectedCable) ? activeColor : '#000000'} 
           emissiveIntensity={hovered ? 0.8 : 0.5}
           metalness={0.2} roughness={0.8} 
         />
       </mesh>
+
+      {/* Cyberpunk Spinning Outer Guide Ring (Breathing scale & Rotation) */}
+      {isCompatible && (
+        <mesh ref={glowRef} position={[0, 0, 0.01]}>
+          <boxGeometry args={[size[0], size[1], size[2] * 1.5]} />
+          <meshBasicMaterial 
+            color={activeColor} 
+            wireframe 
+            transparent 
+            opacity={0.6}
+            toneMapped={false}
+          />
+        </mesh>
+      )}
       
-      {!isMobile && label && (
-        <Html position={[0, size[1] > 0.06 ? size[1] : -0.06, 0]} transform style={{
-          fontFamily: "'JetBrains Mono', monospace", fontSize: '3px', color: '#94a3b8'
-        }}>
-          {label}
-        </Html>
+      {label && (
+        isMobile ? (
+          <Text 
+            position={[0, size[1] > 0.06 ? size[1] : -0.06, 0.03]} 
+            fontSize={0.035} 
+            color={isCompatible ? activeColor : '#94a3b8'} 
+            anchorX="center" 
+            anchorY="middle"
+          >
+            {label}
+            <meshBasicMaterial color={isCompatible ? activeColor : '#94a3b8'} toneMapped={false} />
+          </Text>
+        ) : (
+          <Html position={[0, size[1] > 0.06 ? size[1] : -0.06, 0]} transform style={{
+            fontFamily: "'JetBrains Mono', monospace", fontSize: '3px', color: isCompatible ? activeColor : '#94a3b8',
+            transition: 'color 0.2s', textShadow: isCompatible ? `0 0 4px ${activeColor}` : 'none'
+          }}>
+            {label}
+          </Html>
+        )
       )}
     </group>
   )
