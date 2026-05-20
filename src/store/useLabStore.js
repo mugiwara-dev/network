@@ -321,7 +321,7 @@ export const useLabStore = create(
     })
 
     if (!allPowered) {
-      get().addToast('CRITICAL: One or more core network devices lack power! Connect Power Cables to the UPS.', 'danger')
+      get().addToast('CRITICAL: One or more core network devices lack power! Switch to the [ Infra ] tab, select Power Cables, and connect each device (Server, Switch, Router) to the UPS.', 'danger')
       return
     }
 
@@ -330,7 +330,7 @@ export const useLabStore = create(
     const hasRouterToExt = adj['router']?.includes('external') || (adj['router']?.includes('patch') && adj['patch']?.includes('external'))
 
     if (!hasSrv1ToSwitch || !hasSwitchToRouter || !hasRouterToExt) {
-      get().addToast('CRITICAL: Packet dropped! Path must be Server -> Switch -> Router -> External ISP.', 'danger')
+      get().addToast('CRITICAL: Packet dropped! Switch to the [ Infra ] tab and connect data cables to complete the path: Server ↔ Switch ↔ Router ↔ External ISP.', 'danger')
       return
     }
 
