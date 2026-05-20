@@ -16,7 +16,7 @@ const CABLE_TYPES = {
   'fiber': '#39ff14',  // Neon Green
   'cat5e': '#ffff00',  // Neon Yellow
   'cat6a': '#bd00ff',
-  'power': '#64748b'   // Slate Gray
+  'power': '#f43f5e'   // Neon Pink/Rose
 }
 
 function FloatingLabel({ text, color, offsetX = 0 }) {
@@ -73,7 +73,7 @@ function ClickablePort({ position, portId, name, size=[0.06, 0.08, 0.02], label 
 
   // Get active indicator colors based on cable selection
   const activeColor = useMemo(() => {
-    if (infraSelectedCable === 'power') return '#f59e0b' // Amber/Orange
+    if (infraSelectedCable === 'power') return '#f43f5e' // Neon Pink/Rose
     if (infraSelectedCable === 'fiber') return '#39ff14' // Neon Green
     if (infraSelectedCable) return '#00aaff' // Neon Blue for CAT6/5e/6a
     return '#00ffc8' // Standard fallback highlight
